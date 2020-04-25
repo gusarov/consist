@@ -19,7 +19,8 @@ namespace Consist.Logic
 			{
 				throw new Exception("Must have rooted path");
 			}
-			_path = path;
+
+			_path = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 		}
 
 		public Container Container { get; set; } = new Container();
@@ -27,11 +28,10 @@ namespace Consist.Logic
 		public void Scan()
 		{
 			ScanDir(_path);
-
-
 		}
 		void ScanDir(string dir)
 		{
+			Console.WriteLine("Scan " + dir);
 			foreach (var file in Directory.EnumerateFiles(dir))
 			{
 				ScanFile(file);

@@ -9,11 +9,31 @@ namespace Consist.Cmd
 {
 	class Program
 	{
-		static void Main(string[] args)
+		static int Main(string[] args)
 		{
-			var scan = new Collector(args[0]);
-			scan.Scan();
-			Console.WriteLine(scan.Container.GetSize());
+			for (var i = 0; i < args.Length; i++)
+			{
+				var arg = args[i];
+				switch (arg.TrimStart('/', '-').ToLowerInvariant())
+				{
+					case "snapshot":
+						var dir = args[++i];
+						var metadata = args[++i];
+
+						var scan = new Collector(dir);
+						scan.Scan();
+						Console.WriteLine(scan.Container.GetSize());
+						scan.Container.Save(metadata);
+
+						return 1;
+					default:
+						Console.WriteLine("Unknown Option: " + arg);
+						Console.Error.WriteLine("Unknown Option: " + arg);
+						return 1;
+				}
+			}
+
+			return 1;
 		}
 	}
 }

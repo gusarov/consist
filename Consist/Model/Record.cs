@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
+using System.Windows.Input;
 using System.Windows.Media.Converters;
 
 namespace Consist.Model
@@ -22,7 +23,7 @@ namespace Consist.Model
 
 		public Hash Hash { get; set; }
 
-		// public IEnumerable<Record> SubRecords { get; set; }
+		public List<Record> SubRecords { get; set; }
 
 		public int GetSize() =>
 			Hash.GetSize()
@@ -31,6 +32,22 @@ namespace Consist.Model
 			+ IntPtr.Size // Hash pointer
 			+ IntPtr.Size // class overhead
 		;
+
+		public void Save(BinaryWriter bw, StorageContext ctx)
+		{
+			var folder = System.IO.Path.GetDirectoryName(KeyPath);
+			if (ctx.CurrentFolder == folder)
+			{
+				bw.Write(Path.GetFileName(KeyPath));
+			}
+			else
+			{
+				bw.Write(KeyPath);
+			}
+			ctx.CurrentFolder = folder;
+
+			bw.Write(Hash.Value);
+		}
 
 		public void Save(BinaryWriter bw, bool nameOnly)
 		{
@@ -62,5 +79,22 @@ namespace Consist.Model
 				Hash = new Hash(hash),
 			};
 		}
+
+
+		#region ViewModel
+
+		public string Name
+		{
+			get
+			{
+				if (KeyPath.Length == 1) // Only "\\"
+				{
+					return KeyPath;
+				}
+				return Path.GetFileName(KeyPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+			}
+		}
+
+		#endregion
 	}
 }

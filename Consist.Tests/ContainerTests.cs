@@ -33,10 +33,10 @@ namespace Consist.Tests
 			var container = new Container();
 			container.Load(".consist.metadata");
 
-			var rec1 = container.Get("abc\\test1.txt");
+			var rec1 = container.Get("\\abc\\test1.txt");
 			Assert.AreEqual("634C3BFF7870EB5430A3CB355B88EE1A", rec1.Hash.ToString());
 
-			var rec2 = container.Get("abc\\test2.txt");
+			var rec2 = container.Get("\\abc\\test2.txt");
 			Assert.AreEqual("76E17179BC18263FBFBB16B35C228B88", rec2.Hash.ToString());
 
 		}
@@ -48,7 +48,7 @@ namespace Consist.Tests
 				"abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc2abcabcabca";
 			Directory.CreateDirectory("data");
 			Directory.CreateDirectory($"data\\{folder}");
-			for (var i = 0; i < 10000; i++)
+			for (var i = 0; i < 1000; i++)
 			{
 				File.WriteAllText($"data\\{folder}\\test{i}.txt", "test data");
 			}
@@ -59,12 +59,12 @@ namespace Consist.Tests
 
 			Console.WriteLine(len);
 
-			Assert.IsTrue(len < 400_000, len.ToString());
+			Assert.IsTrue(len < 40_000, len.ToString());
 
 			var container = new Container();
 			container.Load(".consist.metadata");
 
-			for (var i = 0; i < 10000; i++)
+			for (var i = 0; i < 1000; i++)
 			{
 				var rec = container.Get($"\\{folder}\\test{i}.txt");
 				Assert.AreEqual("EB733A00C0C9D336E65691A37AB54293", rec.Hash.ToString());

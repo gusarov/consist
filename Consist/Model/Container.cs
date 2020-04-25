@@ -18,19 +18,61 @@ namespace Consist.Model
 
 	public class Container : ISpace
 	{
-		public string Path { get; set; }
-
 		private readonly Dictionary<string, Record> _records = new Dictionary<string, Record>();
+		private readonly Dictionary<string, Record> _recordsVirtual = new Dictionary<string, Record>();
 
 		public Record Get(string key)
 		{
-			return _records[key];
+			if (_recordsVirtual.TryGetValue(key, out var record))
+			{
+				return record;
+			}
+			_records.TryGetValue(key, out record);
+			return record;
+		}
+		public IEnumerable<Record> GetAll()
+		{
+			return _records.Values.Concat(_recordsVirtual.Values);
 		}
 
 		public void Put(Record rec)
 		{
-			_records.Add(rec.KeyPath, rec);
+			if (rec.KeyPath.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+			{
+				_recordsVirtual.Add(rec.KeyPath, rec);
+			}
+			else
+			{
+				_records.Add(rec.KeyPath, rec);
+			}
+
+			UpdateParentFolder(rec);
 			// Console.WriteLine($"{rec.KeyPath} {rec.Hash}");
+		}
+
+		void UpdateParentFolder(Record rec)
+		{
+			var parent = Path.GetDirectoryName(rec.KeyPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+			if (!parent.EndsWith(Path.DirectorySeparatorChar.ToString()))
+			{
+				parent += Path.DirectorySeparatorChar;
+			}
+			var item = Get(parent);
+			if (item == null)
+			{
+				item = new Record(parent)
+				{
+					SubRecords = new List<Record>(),
+				};
+				_recordsVirtual.Add(parent, item);
+				if (parent != Path.DirectorySeparatorChar.ToString() &&
+				    parent != Path.AltDirectorySeparatorChar.ToString())
+				{
+					UpdateParentFolder(item);
+				}
+			}
+
+			item.SubRecords.Add(rec);
 		}
 
 		public int GetSize() =>
@@ -50,6 +92,8 @@ namespace Consist.Model
 					var ctx = new StorageContext(16);
 					foreach (var rec in _records.OrderBy(x => x.Key))
 					{
+						rec.Value.Save(bw, ctx);
+						/*
 						var folder = System.IO.Path.GetDirectoryName(rec.Key);
 						if (ctx.CurrentFolder == folder)
 						{
@@ -60,12 +104,21 @@ namespace Consist.Model
 							rec.Value.Save(bw, false);
 						}
 						ctx.CurrentFolder = folder;
+						*/
 					}
 
 				}
 				file.SetLength(file.Position);
 			}
 		}
+
+		public static Container LoadFrom(string metadataFile)
+		{
+			var cont = new Container();
+			cont.Load(metadataFile);
+			return cont;
+		}
+
 		public void Load(string metadataFile)
 		{
 			using (var file = File.OpenRead(metadataFile))
@@ -93,7 +146,8 @@ namespace Consist.Model
 					while (file.Position != file.Length)
 					{
 						var rec = Record.Load(br, ctx);
-						_records.Add(rec.KeyPath, rec);
+						// _records.Add(rec.KeyPath, rec);
+						Put(rec);
 					}
 				}
 			}

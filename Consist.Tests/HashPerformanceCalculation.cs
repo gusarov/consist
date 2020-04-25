@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Consist.Tests
 {
 	[TestClass]
+	[Ignore]
 	public class HashPerformanceCalculation
 	{
 		[TestMethod]
