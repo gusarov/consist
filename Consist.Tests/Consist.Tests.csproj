@@ -58,6 +58,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Consist.Model\Consist.Model.csproj">
+      <Project>{3cf5c253-0720-497d-9d3b-f3d9026163a4}</Project>
+      <Name>Consist.Model</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Consist\Consist.csproj">
       <Project>{8BB321D5-E3DE-43AB-B65B-5AFA7D5D9D7A}</Project>
       <Name>Consist</Name>

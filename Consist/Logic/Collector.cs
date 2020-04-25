@@ -27,16 +27,22 @@ namespace Consist.Logic
 
 		public void Scan()
 		{
-			ScanDir(_path);
+			foreach (var meta in Container.Metadata
+				.Where(x => x.MetadataRecordType == MetadataRecordType.OriginalPath))
+			{
+				Container.Metadata.Remove(meta);
+			}
+			ScanDir(new DirectoryInfo(_path));
 		}
-		void ScanDir(string dir)
+
+		void ScanDir(DirectoryInfo dir)
 		{
 			Console.WriteLine("Scan " + dir);
-			foreach (var file in Directory.EnumerateFiles(dir))
+			foreach (var file in dir.EnumerateFiles())
 			{
 				ScanFile(file);
 			}
-			foreach (var subdir in Directory.EnumerateDirectories(dir))
+			foreach (var subdir in dir.EnumerateDirectories())
 			{
 				ScanDir(subdir);
 			}
@@ -44,19 +50,20 @@ namespace Consist.Logic
 
 		private HashAlgorithm _hashAlgorithm = HashAlgorithm.Create("MD5");
 
-		void ScanFile(string file)
+		void ScanFile(FileInfo file)
 		{
 			byte[] hash;
-			using (var stream = File.OpenRead(file))
+			using (var stream = file.OpenRead())
 			{
 				hash = _hashAlgorithm.ComputeHash(stream);
 			}
 
-			var relPath = file.Substring(_path.Length);
+			var relPath = file.FullName.Substring(_path.Length);
 
 			Container.Put(new Record(relPath)
 			{
 				Hash = new Hash(hash),
+				FileSize = file.Length,
 			});
 		}
 

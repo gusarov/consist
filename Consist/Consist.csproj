@@ -68,7 +68,6 @@
     </Compile>
     <Compile Include="HashAlgo\HashAlgoProfiler.cs" />
     <Compile Include="Logic\Collector.cs" />
-    <Compile Include="Model\Container.cs" />
     <Compile Include="HashAlgo\HashAlgoList.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
@@ -80,9 +79,6 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Model\Hash.cs" />
-    <Compile Include="Model\ISpace.cs" />
-    <Compile Include="Model\Record.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -108,6 +104,14 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Model\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Consist.Model\Consist.Model.csproj">
+      <Project>{3cf5c253-0720-497d-9d3b-f3d9026163a4}</Project>
+      <Name>Consist.Model</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

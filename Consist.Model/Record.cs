@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
 using System.Windows.Input;
-using System.Windows.Media.Converters;
 
 namespace Consist.Model
 {
 	public class Record : ISpace
 	{
-
 		public Record(string keyPath)
 		{
 			if (keyPath[0] != '\\')
@@ -23,11 +21,14 @@ namespace Consist.Model
 
 		public Hash Hash { get; set; }
 
+		public long FileSize { get; set; }
+
 		public List<Record> SubRecords { get; set; }
 
 		public int GetSize() =>
 			Hash.GetSize()
 			+ KeyPath.Length * sizeof(char)
+			+ sizeof(long) // FileSize
 			+ IntPtr.Size // KeyPath pointer
 			+ IntPtr.Size // Hash pointer
 			+ IntPtr.Size // class overhead
@@ -35,23 +36,18 @@ namespace Consist.Model
 
 		public void Save(BinaryWriter bw, StorageContext ctx)
 		{
-			var folder = System.IO.Path.GetDirectoryName(KeyPath);
+			var folder = Path.GetDirectoryName(KeyPath);
 			if (ctx.CurrentFolder == folder)
 			{
-				bw.Write(Path.GetFileName(KeyPath));
+				bw.Write(Path.GetFileName(KeyPath)); // file.txt
 			}
 			else
 			{
-				bw.Write(KeyPath);
+				bw.Write(KeyPath); // \folder\folder\file.txt
 			}
 			ctx.CurrentFolder = folder;
 
-			bw.Write(Hash.Value);
-		}
-
-		public void Save(BinaryWriter bw, bool nameOnly)
-		{
-			bw.Write(nameOnly ? Path.GetFileName(KeyPath) : KeyPath);
+			bw.Write(FileSize);
 			bw.Write(Hash.Value);
 		}
 
@@ -67,6 +63,8 @@ namespace Consist.Model
 				ctx.CurrentFolder = Path.GetDirectoryName(key);
 			}
 
+			var len = br.ReadInt64();
+
 			var hash = new byte[ctx.HashLen];
 			var r = br.Read(hash, 0, ctx.HashLen);
 			if (r != ctx.HashLen)
@@ -76,10 +74,10 @@ namespace Consist.Model
 
 			return new Record(key)
 			{
+				FileSize = len,
 				Hash = new Hash(hash),
 			};
 		}
-
 
 		#region ViewModel
 
@@ -87,9 +85,9 @@ namespace Consist.Model
 		{
 			get
 			{
-				if (KeyPath.Length == 1) // Only "\\"
+				if (KeyPath.Length == 1) // Only @"\"
 				{
-					return KeyPath;
+					return KeyPath; // root have a name @"\"
 				}
 				return Path.GetFileName(KeyPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
 			}

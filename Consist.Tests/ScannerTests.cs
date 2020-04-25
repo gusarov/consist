@@ -90,6 +90,20 @@ namespace Consist.Tests
 		}
 
 		[TestMethod]
+		public void Should_10_scan_hidden_system_file()
+		{
+			File.WriteAllText("test_hidden.txt", "test data");
+			File.SetAttributes("test_hidden.txt",
+				FileAttributes.Normal | FileAttributes.Hidden | FileAttributes.System);
+			Collector.Scan();
+
+			var rec = Collector.Container.Get("\\test_hidden.txt");
+
+			// md5('test data')
+			Assert.AreEqual("EB733A00C0C9D336E65691A37AB54293", rec.Hash.ToString());
+		}
+
+		[TestMethod]
 		public void Should_20_scan_folder()
 		{
 			Directory.CreateDirectory("abc");

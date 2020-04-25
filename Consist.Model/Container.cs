@@ -6,16 +6,6 @@ using System.Text;
 
 namespace Consist.Model
 {
-	public class StorageContext
-	{
-		public StorageContext(int hashLen)
-		{
-			HashLen = hashLen;
-		}
-		public int HashLen { get; }
-		public string CurrentFolder { get; set; }
-	}
-
 	public class Container : ISpace
 	{
 		private readonly Dictionary<string, Record> _records = new Dictionary<string, Record>();
@@ -50,6 +40,16 @@ namespace Consist.Model
 			// Console.WriteLine($"{rec.KeyPath} {rec.Hash}");
 		}
 
+		internal void SetMetadata(IEnumerable<MetadataRecord> records)
+		{
+			var types = new HashSet<MetadataRecordType>(records.Select(x => x.MetadataRecordType));
+
+			foreach (var record in _metadata.Where(x => types.Contains(x.MetadataRecordType)).ToArray())
+			{
+				_metadata.Remove(record);
+			}
+		}
+
 		void UpdateParentFolder(Record rec)
 		{
 			var parent = Path.GetDirectoryName(rec.KeyPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
@@ -79,17 +79,33 @@ namespace Consist.Model
 			_records.Select(x => x.Value.GetSize()).Sum()
 			;
 
+		private readonly List<MetadataRecord> _metadata = new List<MetadataRecord>();
+
+		public IList<MetadataRecord> Metadata => _metadata;
+
 		public void Save(string metadataFile)
 		{
 			using (var file = File.OpenWrite(metadataFile))
 			{
+				long flagPos;
 				using (var bw = new BinaryWriter(file, new UTF8Encoding(false, false), true))
 				{
 					bw.Write("Consist Metadata"); // marker
+					bw.Flush(); // to read position correctly
+					flagPos = bw.BaseStream.Position;
+					bw.Write((byte)0); // transaction flag. 0 - transaction in progress. 1 - transaction completed
 					bw.Write((byte)1); // ver
 					bw.Write((byte)16); // md5 len
 
-					var ctx = new StorageContext(16);
+					var ctx = new StorageContext(1, 16);
+
+					if (Metadata.Count >= 64) throw new Exception();
+					bw.Write((byte)Metadata.Count); // meta len
+					foreach (var meta in Metadata)
+					{
+						meta.Save(bw, ctx);
+					}
+
 					foreach (var rec in _records.OrderBy(x => x.Key))
 					{
 						rec.Value.Save(bw, ctx);
@@ -108,7 +124,11 @@ namespace Consist.Model
 					}
 
 				}
+
 				file.SetLength(file.Position);
+				file.Flush(); // flush first as a separate stage
+				file.Position = flagPos;
+				file.WriteByte(1); // set transaction flag to completed in the final stage
 			}
 		}
 
@@ -131,6 +151,11 @@ namespace Consist.Model
 						throw new Exception("The file is not Consist Metadata file");
 					}
 
+					var tranFlag = br.ReadByte();
+					if ((tranFlag & 1) == 0)
+					{
+						throw new Exception("File corrupted, previous transaction aborted");
+					}
 					var ver = br.ReadByte();
 					if (ver != 1)
 					{
@@ -139,10 +164,17 @@ namespace Consist.Model
 
 					var hashLen = br.ReadByte();
 
-					var ctx = new StorageContext(hashLen)
+					var ctx = new StorageContext(ver, hashLen)
 					{
-						
 					};
+
+					var metaLen = br.ReadByte();
+					if (metaLen >= 64) throw new Exception();
+					for (var i = 0; i < metaLen; i++)
+					{
+						Metadata.Add(MetadataRecord.Read(br, ctx));
+					}
+
 					while (file.Position != file.Length)
 					{
 						var rec = Record.Load(br, ctx);

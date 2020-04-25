@@ -50,6 +50,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Consist.Model\Consist.Model.csproj">
+      <Project>{3CF5C253-0720-497D-9D3B-F3D9026163A4}</Project>
+      <Name>Consist.Model</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Consist\Consist.csproj">
       <Project>{8bb321d5-e3de-43ab-b65b-5afa7d5d9d7a}</Project>
       <Name>Consist</Name>
