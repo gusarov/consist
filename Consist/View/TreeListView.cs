@@ -13,6 +13,7 @@ namespace Consist.View
 		{
 			//Override the default style and the default control template
 			DefaultStyleKeyProperty.OverrideMetadata(typeof(TreeListView), new FrameworkPropertyMetadata(typeof(TreeListView)));
+			
 		}
 
 		/// <summary>

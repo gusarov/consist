@@ -31,7 +31,7 @@ namespace Consist
 				await Task.Delay(100);
 				MainThread.Invoke(delegate
 				{
-					Height = 1200;
+					// Height = 1200;
 					WindowState = WindowState.Maximized;
 				});
 			});

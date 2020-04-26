@@ -10,12 +10,17 @@
 		d:DesignHeight="850" d:DesignWidth="800">
 	<Grid HorizontalAlignment="Stretch">
 		<Grid.ColumnDefinitions>
-			<ColumnDefinition />
-			<ColumnDefinition Width="6" />
-			<ColumnDefinition />
+			<ColumnDefinition Width="0"/>
+			<ColumnDefinition Width="2" />
+			<ColumnDefinition Width="5*" />
 		</Grid.ColumnDefinitions>
 		<Border Grid.Column="0" >
 			<TreeView ItemsSource="{Binding}" >
+				<TreeView.ItemContainerStyle>
+					<Style TargetType="TreeViewItem">
+						<Setter Property="IsExpanded" Value="{Binding IsExpanded}" />
+					</Style>
+				</TreeView.ItemContainerStyle>
 				<TreeView.Resources>
 					<!--
 				<HierarchicalDataTemplate DataType="{x:Type viewModel:TreeRootViewModel}" ItemsSource="{Binding Children}">
@@ -42,23 +47,26 @@
 		<GridSplitter Grid.Column="1"/>
 		<Border Grid.Column="2" >
 
-		<local:TreeListView ItemsSource="{Binding}" AllowsColumnReorder="True">
+			<local:TreeListView ItemsSource="{Binding}" AllowsColumnReorder="True" SnapsToDevicePixels="True">
+			<local:TreeListView.ItemTemplate>
+				<HierarchicalDataTemplate ItemsSource="{Binding Children}" />
+			</local:TreeListView.ItemTemplate>
 
 			<local:TreeListView.Columns>
 
-				<GridViewColumn Header="Name" Width="200">
-					<GridViewColumn.CellTemplate>
-						<DataTemplate>
-							<StackPanel Orientation="Horizontal">
-								<local:TreeListViewExpander />
-									<Image Source="{Binding ImageSource}" Margin="4 0" />
-								<TextBlock Text="{Binding Name}" Margin="4 0" />
-							</StackPanel>
-						</DataTemplate>
-					</GridViewColumn.CellTemplate>
-				</GridViewColumn>
+					<GridViewColumn Header="Name" Width="200">
+						<GridViewColumn.CellTemplate>
+							<DataTemplate>
+								<StackPanel Orientation="Horizontal">
+									<local:TreeListViewExpander Focusable="False" />
+									<Image Source="{Binding ImageSource}" Margin="4 0" Focusable="False" />
+									<TextBlock Text="{Binding Name}" Margin="4 0" />
+								</StackPanel>
+							</DataTemplate>
+						</GridViewColumn.CellTemplate>
+					</GridViewColumn>
 
-				<GridViewColumn Header="Children" Width="100">
+					<GridViewColumn Header="Children" Width="100">
 					<GridViewColumn.CellTemplate>
 						<DataTemplate>
 							<!--Display the size of the DataElement-->

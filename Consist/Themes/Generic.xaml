@@ -1,30 +1,35 @@
 ﻿<ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:view="clr-namespace:Consist.View">
+    xmlns:view="clr-namespace:Consist.View"
+    xmlns:s="clr-namespace:System;assembly=mscorlib">
 
-	<!--Converter for Indentation of items-->
 	<view:IndentConverter x:Key="IndentConverter"/>
 
-	<!--Control Template for TreeViewItem's.-->
 	<ControlTemplate TargetType="TreeViewItem" x:Key="TreeListViewItem">
-		<!--Grid containing the current information and the subnodes.-->
+		<!-- Grid containing the current information and the sub nodes -->
 		<StackPanel>
 			<!--Border wrapping the content presenter.-->
-			<Border x:Name="Border">
+			<Border Name="Border"
+			        BorderThickness="{TemplateBinding Border.BorderThickness}"
+			        Padding="0 1 0 2"
+			        BorderBrush="{TemplateBinding Border.BorderBrush}"
+			        Background="{TemplateBinding Panel.Background}"
+			        SnapsToDevicePixels="True" >
 				<!--GridViewRowPresenter containing the current information.-->
-				<GridViewRowPresenter Content="{TemplateBinding Header}"
+				<GridViewRowPresenter
+					Content="{TemplateBinding Header}"
                     Columns="{Binding Columns, 
                     RelativeSource={RelativeSource Mode=FindAncestor, 
                     AncestorType=view:TreeListView}}"/>
 			</Border>
-			<!--ItemsPresenter containing the subnodes-->
-			<ItemsPresenter x:Name="ItemsPresenter" Visibility="Collapsed"/>
+			<!-- ItemsPresenter containing the sub nodes -->
+			<ItemsPresenter Name="ItemsHost" Visibility="Collapsed"/>
 		</StackPanel>
 		<ControlTemplate.Triggers>
 			<!--Trigger used to show the sub items-->
 			<DataTrigger Binding="{Binding IsExpanded}" Value="True">
-				<Setter TargetName="ItemsPresenter" Property="Visibility" Value="Visible"/>
+				<Setter TargetName="ItemsHost" Property="Visibility" Value="Visible"/>
 			</DataTrigger>
 			<!--Trigger used to change the color based on selection-->
 			<Trigger Property="IsSelected" Value="true">
@@ -57,14 +62,133 @@
 		</ControlTemplate.Triggers>
 	</ControlTemplate>
 
-	<!--Control Template for TreeListViewExpander's.-->
 	<ControlTemplate TargetType="{x:Type view:TreeListViewExpander}" x:Key="TreeListViewExpander">
-		<StackPanel Orientation="Horizontal" x:Name="ContainerElement">
+		<StackPanel Orientation="Horizontal" Name="_stackPanel" Focusable="False">
 			<!--Use a FrameworkElement to indent the button-->
-			<FrameworkElement Width="{Binding RelativeSource={x:Static RelativeSource.Self}, Converter={StaticResource IndentConverter}}"/>
+			<FrameworkElement Focusable="False" Width="{Binding RelativeSource={x:Static RelativeSource.Self}, Converter={StaticResource IndentConverter}}"/>
 			<!--Use a standard toggle button-->
-			<ToggleButton IsChecked="{Binding IsExpanded}" Width="16" Height="16" VerticalAlignment="Center" Margin="1">
+			<!-- 
+			<TextBlock Text="{Binding HasItems}" />
+			<TextBlock Text="{Binding HasItems, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=TreeViewItem}}" />
+			<TextBlock> | </TextBlock>
+			<TextBlock Text="{Binding}" />
+	
+			<ToggleButton IsChecked="{Binding IsExpanded, Mode=TwoWay}" Width="16" Height="16" VerticalAlignment="Center" Margin="1">
 
+			</ToggleButton>		-->
+			<ToggleButton IsChecked="{Binding IsExpanded, Mode=TwoWay}" ClickMode="Press" Name="Expander" Focusable="False">
+				<ToggleButton.Style>
+					<Style TargetType="{x:Type ToggleButton}">
+						<Style.Resources>
+							<ResourceDictionary />
+						</Style.Resources>
+						<Setter Property="UIElement.Focusable">
+							<Setter.Value>
+								<s:Boolean>
+									False</s:Boolean>
+							</Setter.Value>
+						</Setter>
+						<Setter Property="FrameworkElement.Width">
+							<Setter.Value>
+								<s:Double>
+									16</s:Double>
+							</Setter.Value>
+						</Setter>
+						<Setter Property="FrameworkElement.Height">
+							<Setter.Value>
+								<s:Double>
+									16</s:Double>
+							</Setter.Value>
+						</Setter>
+						<Setter Property="Control.Template">
+							<Setter.Value>
+								<ControlTemplate TargetType="{x:Type ToggleButton}">
+									<Border Padding="5,5,5,5" Background="#00FFFFFF" Width="16" Height="16">
+										<Path Fill="#FFFFFFFF" Stroke="#FF818181" Name="ExpandPath">
+											<Path.Data>
+												<PathGeometry Figures="M0,0L0,6L6,0z" />
+											</Path.Data>
+											<Path.RenderTransform>
+												<RotateTransform Angle="135" CenterX="3" CenterY="3" />
+											</Path.RenderTransform>
+										</Path>
+									</Border>
+									<ControlTemplate.Triggers>
+										<Trigger Property="ToggleButton.IsChecked">
+											<Setter Property="UIElement.RenderTransform" TargetName="ExpandPath">
+												<Setter.Value>
+													<RotateTransform Angle="180" CenterX="3" CenterY="3" />
+												</Setter.Value>
+											</Setter>
+											<Setter Property="Shape.Fill" TargetName="ExpandPath">
+												<Setter.Value>
+													<SolidColorBrush>
+														#FF595959</SolidColorBrush>
+												</Setter.Value>
+											</Setter>
+											<Setter Property="Shape.Stroke" TargetName="ExpandPath">
+												<Setter.Value>
+													<SolidColorBrush>
+														#FF262626</SolidColorBrush>
+												</Setter.Value>
+											</Setter>
+											<Trigger.Value>
+												<s:Boolean>
+													True</s:Boolean>
+											</Trigger.Value>
+										</Trigger>
+										<Trigger Property="UIElement.IsMouseOver">
+											<Setter Property="Shape.Stroke" TargetName="ExpandPath">
+												<Setter.Value>
+													<SolidColorBrush>
+														#FF27C7F7</SolidColorBrush>
+												</Setter.Value>
+											</Setter>
+											<Setter Property="Shape.Fill" TargetName="ExpandPath">
+												<Setter.Value>
+													<SolidColorBrush>
+														#FFCCEEFB</SolidColorBrush>
+												</Setter.Value>
+											</Setter>
+											<Trigger.Value>
+												<s:Boolean>
+													True</s:Boolean>
+											</Trigger.Value>
+										</Trigger>
+										<MultiTrigger>
+											<MultiTrigger.Conditions>
+												<Condition Property="UIElement.IsMouseOver">
+													<Condition.Value>
+														<s:Boolean>
+															True</s:Boolean>
+													</Condition.Value>
+												</Condition>
+												<Condition Property="ToggleButton.IsChecked">
+													<Condition.Value>
+														<s:Boolean>
+															True</s:Boolean>
+													</Condition.Value>
+												</Condition>
+											</MultiTrigger.Conditions>
+											<Setter Property="Shape.Stroke" TargetName="ExpandPath">
+												<Setter.Value>
+													<SolidColorBrush>
+														#FF1CC4F7</SolidColorBrush>
+												</Setter.Value>
+											</Setter>
+											<Setter Property="Shape.Fill" TargetName="ExpandPath">
+												<Setter.Value>
+													<SolidColorBrush>
+														#FF82DFFB</SolidColorBrush>
+												</Setter.Value>
+											</Setter>
+										</MultiTrigger>
+									</ControlTemplate.Triggers>
+								</ControlTemplate>
+							</Setter.Value>
+						</Setter>
+					</Style>
+				</ToggleButton.Style>
 			</ToggleButton>
 			<!--
 			<ToggleButton IsChecked="{Binding IsExpanded}" Width="9" Height="9" VerticalAlignment="Center" Margin="1"/>
@@ -72,9 +196,8 @@
 		</StackPanel>
 		<ControlTemplate.Triggers>
 			<!--Trigger used to show/hide the expand button-->
-			<DataTrigger Binding="{Binding HasItems, RelativeSource={RelativeSource Mode=FindAncestor,
-                AncestorType=TreeViewItem}}" Value="False">
-				<Setter TargetName="ContainerElement" Property="Visibility" Value="Hidden"/>
+			<DataTrigger Binding="{Binding HasItems}" Value="False">
+				<Setter TargetName="_stackPanel" Property="Visibility" Value="Hidden"/>
 			</DataTrigger>
 		</ControlTemplate.Triggers>
 	</ControlTemplate>
@@ -82,6 +205,8 @@
 	<!--Apply this style to all controls of type 'TreeListView'.-->
 	<Style TargetType="{x:Type view:TreeListView}">
 		<!--Set the control template.-->
+		<Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+		<Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
 		<Setter Property="Template">
 			<Setter.Value>
 				<ControlTemplate TargetType="{x:Type view:TreeListView}">
@@ -98,11 +223,18 @@
 					<!--Create a standard border around the 'TreeListView'.-->
 					<Border Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}">
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            SnapsToDevicePixels="{TemplateBinding UIElement.SnapsToDevicePixels}"
+                            >
 						<!--ScrollViewer providing horizontal scrolling functionality 
                         for both, content and headers.-->
-						<ScrollViewer HorizontalScrollBarVisibility="Auto"
-                                      VerticalScrollBarVisibility="Disabled">
+						<ScrollViewer HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                      VerticalScrollBarVisibility="Disabled"
+                                      Focusable="False"
+                                      CanContentScroll="False"
+                                      Padding="{TemplateBinding Padding}"
+                                      SnapsToDevicePixels="{TemplateBinding UIElement.SnapsToDevicePixels}"
+						              >
 							<!--Grid containing the header row and all the content rows.-->
 							<Grid>
 								<Grid.RowDefinitions>
@@ -117,9 +249,8 @@
 								<!--ScrollViewer providing vertical scrolling
                                 functionality for the content.-->
 								<ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                                              VerticalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
                                               Grid.Row="1">
-									<!--ItemsPresenter containg the content.-->
 									<ItemsPresenter/>
 								</ScrollViewer>
 							</Grid>

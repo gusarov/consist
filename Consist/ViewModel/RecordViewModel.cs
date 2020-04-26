@@ -13,10 +13,11 @@ using System.Threading;
 
 using Icon = System.Drawing.Icon;
 using Consist.Interop;
+using Consist.View;
 
 namespace Consist.ViewModel
 {
-	class RecordViewModel : ViewModel
+	class RecordViewModel : ViewModel, ITreeListNode
 	{
 		private readonly Record _record;
 		private readonly string _customName;
@@ -144,6 +145,8 @@ namespace Consist.ViewModel
 			}
 		}
 
+		public bool HasItems => Children.Any();
+
 		[DebuggerNonUserCode]
 		[DebuggerStepThrough]
 		async void RescanChildren()
@@ -161,13 +164,19 @@ namespace Consist.ViewModel
 					{
 						list.Add(new RecordViewModel(sub));
 					}
-					MainThread.Invoke(delegate
+
+					if (list.Any())
 					{
-						for (int i = 0; i < list.Count; i++)
+						MainThread.Invoke(delegate
 						{
-							_children.Add(list[i]);
-						}
-					});
+							for (int i = 0; i < list.Count; i++)
+							{
+								_children.Add(list[i]);
+							}
+
+							OnPropertyChanged(nameof(HasItems));
+						});
+					}
 				}
 				catch (Exception ex)
 				{

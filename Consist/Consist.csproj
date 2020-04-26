@@ -75,6 +75,7 @@
       <DependentUpon>Explorer.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\ExplorerSource.cs" />
+    <Compile Include="View\ITreeListNode.cs" />
     <Compile Include="View\TreeListView.cs" />
     <Compile Include="View\IndentConverter.cs" />
     <Compile Include="View\TreeListViewExpander.cs" />
