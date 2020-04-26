@@ -1,6 +1,4 @@
-﻿using Consist.Utils;
-using Consist.ViewModel;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,26 +13,16 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Consist
+namespace Consist.View
 {
 	/// <summary>
-	/// Interaction logic for MainWindow.xaml
+	/// Interaction logic for ContainerSettings.xaml
 	/// </summary>
-	public partial class MainWindow : Window
+	public partial class ContainerSettings : UserControl
 	{
-		public MainWindow()
+		public ContainerSettings()
 		{
 			InitializeComponent();
-			DataContext = RootDataContext.Instance;
-			Task.Run(async delegate
-			{
-				await Task.Delay(100);
-				MainThread.Invoke(delegate
-				{
-					Height = 1200;
-					WindowState = WindowState.Maximized;
-				});
-			});
 		}
 	}
 }

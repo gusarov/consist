@@ -1,23 +1,86 @@
 ﻿<UserControl x:Class="Consist.View.Explorer"
 		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-		xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:local="clr-namespace:Consist.View"
 		xmlns:model="clr-namespace:Consist.Model;assembly=Consist.Model"
-		mc:Ignorable="d" 
-		d:DesignHeight="450" d:DesignWidth="800">
+		xmlns:viewModel="clr-namespace:Consist.ViewModel"
+		mc:Ignorable="d"
+		Width="850"
+		d:DesignHeight="850" d:DesignWidth="800">
 	<Grid>
-		<TreeView ItemsSource="{Binding Records}">
-			<TreeView.ItemTemplate>
-				<HierarchicalDataTemplate DataType="{x:Type model:Record}" ItemsSource="{Binding SubRecords}">
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="*" />
+			<ColumnDefinition Width="*" />
+		</Grid.ColumnDefinitions>
+		<TreeView ItemsSource="{Binding}" Grid.Column="0">
+			<TreeView.Resources>
+				<!--
+				<HierarchicalDataTemplate DataType="{x:Type viewModel:TreeRootViewModel}" ItemsSource="{Binding Children}">
 					<StackPanel Orientation="Horizontal">
 						<TextBlock Text="{Binding Name}" />
-						<TextBlock>  </TextBlock>
-						<TextBlock Text="{Binding FileSize}" />
+						<TextBlock> |</TextBlock>
+						<TextBlock Text="{Binding Size}" />
 					</StackPanel>
 				</HierarchicalDataTemplate>
-			</TreeView.ItemTemplate>
+				-->
+				<HierarchicalDataTemplate DataType="{x:Type viewModel:RecordViewModel}" ItemsSource="{Binding Children}">
+					<StackPanel Orientation="Horizontal" Margin="0 2">
+						<Image Source="{Binding Icon}" />
+						<TextBlock Text="{Binding Name}" Margin="4 0" />
+						<!--
+						<TextBlock> |</TextBlock>
+						<TextBlock Text="{Binding Size}" />
+						-->
+					</StackPanel>
+				</HierarchicalDataTemplate>
+			</TreeView.Resources>
 		</TreeView>
+		<local:TreeListView ItemsSource="{Binding}" AllowsColumnReorder="True" Grid.Column="1">
+
+			<local:TreeListView.Columns>
+
+				<GridViewColumn Header="Name" Width="200">
+					<GridViewColumn.CellTemplate>
+						<DataTemplate>
+							<StackPanel Orientation="Horizontal">
+								<local:TreeListViewExpander />
+								<Image Source="{Binding Icon}" Margin="4 0" />
+								<TextBlock Text="{Binding Name}" Margin="4 0" />
+							</StackPanel>
+						</DataTemplate>
+					</GridViewColumn.CellTemplate>
+				</GridViewColumn>
+
+				<GridViewColumn Header="Children" Width="100">
+					<GridViewColumn.CellTemplate>
+						<DataTemplate>
+							<!--Display the size of the DataElement-->
+							<TextBlock Text="{Binding Count}" HorizontalAlignment="Right"/>
+						</DataTemplate>
+					</GridViewColumn.CellTemplate>
+				</GridViewColumn>
+
+				<GridViewColumn Header="Brush" Width="100">
+					<GridViewColumn.CellTemplate>
+						<DataTemplate>
+							<StackPanel Orientation="Horizontal">
+								<!--Border showing the actual color-->
+								<Border 
+									Background="{Binding Brush}"
+									CornerRadius="2"
+									Width="16"
+									Height="16"
+									BorderThickness="1"
+									BorderBrush="DarkGray"/>
+								<!--Display the brush-->
+								<TextBlock Text="{Binding Property2}"/>
+							</StackPanel>
+						</DataTemplate>
+					</GridViewColumn.CellTemplate>
+				</GridViewColumn>
+			</local:TreeListView.Columns>
+		</local:TreeListView>
 	</Grid>
 </UserControl>

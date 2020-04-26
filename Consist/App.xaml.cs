@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Consist.Utils;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -13,5 +14,11 @@ namespace Consist
 	/// </summary>
 	public partial class App : Application
 	{
+
+		protected override void OnStartup(StartupEventArgs e)
+		{
+			MainThread.Register();
+			base.OnStartup(e);
+		}
 	}
 }
