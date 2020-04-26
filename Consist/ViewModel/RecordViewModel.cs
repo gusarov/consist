@@ -9,6 +9,10 @@ using System.Threading.Tasks;
 using System.Windows.Media;
 using Consist.Utils;
 using System.Diagnostics;
+using System.Threading;
+
+using Icon = System.Drawing.Icon;
+using Consist.Interop;
 
 namespace Consist.ViewModel
 {
@@ -17,11 +21,13 @@ namespace Consist.ViewModel
 		private readonly Record _record;
 		private readonly string _customName;
 		private readonly FileSystemInfo _info;
+		private readonly bool _isFolder;
 
 		public RecordViewModel(FileSystemInfo info, string customName = null)
 		{
 			_customName = customName;
 			_info = info;
+			_isFolder = info is DirectoryInfo;
 		}
 
 		public string Name
@@ -29,9 +35,57 @@ namespace Consist.ViewModel
 			get { return _customName ?? _info.Name; }
 		}
 
-		public ImageSource Icon
+		private bool _iconRequested;
+
+		private Icon _icon;
+
+		private static ImageSource _imageSourceDefaultFolder = ShellManager.GetImageSource(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), false, true);
+
+		private static ImageSource _imageSourceDefaultFile = ShellManager.GetImageSource(".ttt", false, false);
+
+		private ImageSource _imageSource;
+		public ImageSource ImageSource
 		{
-			get { return ShellManager.GetImageSource(_info.FullName, false); }
+			get
+			{
+				if (!_iconRequested)
+				{
+					_iconRequested = true;
+					Task.Run(async delegate
+					{
+#if DELAY
+						await Task.Delay(500);
+#endif
+						if (_info is DirectoryInfo di)
+						{
+							_icon = ShellManager.GetIcon(_info.FullName, true);
+						}
+						else if (_info is FileInfo fi)
+						{
+							_icon = ShellManager.GetIcon(_info.FullName, false);
+						}
+						MainThread.Invoke(delegate
+						{
+							OnPropertyChanged(nameof(ImageSource));
+						});
+					});
+				}
+
+				if (_imageSource == null)
+				{
+					if (_icon != null)
+					{
+						_imageSource = ShellManager.GetImageSource(_icon);
+					}
+					else
+					{
+						return _isFolder
+							? _imageSourceDefaultFolder
+							: _imageSourceDefaultFile;
+					}
+				}
+				return _imageSource;
+			}
 		}
 
 		public int Size
@@ -92,17 +146,28 @@ namespace Consist.ViewModel
 
 		[DebuggerNonUserCode]
 		[DebuggerStepThrough]
-		void RescanChildren()
+		async void RescanChildren()
 		{
+#if DELAY
+			await Task.Delay(1000);
+#endif
 			MainThread.AssertNotUiThread();
 			if (_info is DirectoryInfo di)
 			{
 				try
 				{
+					var list = new List<RecordViewModel>();
 					foreach (var sub in di.EnumerateFileSystemInfos())
 					{
-						MainThread.Invoke(delegate { _children.Add(new RecordViewModel(sub)); });
+						list.Add(new RecordViewModel(sub));
 					}
+					MainThread.Invoke(delegate
+					{
+						for (int i = 0; i < list.Count; i++)
+						{
+							_children.Add(list[i]);
+						}
+					});
 				}
 				catch (Exception ex)
 				{

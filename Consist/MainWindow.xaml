@@ -7,7 +7,7 @@
 		mc:Ignorable="d"
 		Title="Storage Inspector" Height="450" Width="800">
 	<Grid>
-		<view:Explorer>
+		<view:Explorer Width="Auto">
 			
 		</view:Explorer>
 	</Grid>

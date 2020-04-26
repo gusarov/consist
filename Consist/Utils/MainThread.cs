@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -25,6 +26,7 @@ namespace Consist.Utils
 			_thread = Thread.CurrentThread;
 		}
 
+		// [DebuggerStepThrough]
 		public static void AssertNotUiThread()
 		{
 			if (_thread == null)
