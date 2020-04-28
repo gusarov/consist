@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Consist.Model
 {
-	public class Container : ISpace
+	public class MetadataContainer : ISpace
 	{
 		private readonly Dictionary<string, Record> _records = new Dictionary<string, Record>();
 		private readonly Dictionary<string, Record> _recordsVirtual = new Dictionary<string, Record>();
@@ -83,10 +83,21 @@ namespace Consist.Model
 
 		public IList<MetadataRecord> Metadata => _metadata;
 
+
+		public void Save()
+		{
+			if (_metadataFile == null)
+			{
+				throw new Exception("You should specify file name to SaveAs, or Load from file first");
+			}
+			Save(_metadataFile);
+		}
+
 		public void Save(string metadataFile)
 		{
 			using (var file = File.OpenWrite(metadataFile))
 			{
+				_metadataFile = metadataFile;
 				long flagPos;
 				using (var bw = new BinaryWriter(file, new UTF8Encoding(false, false), true))
 				{
@@ -132,15 +143,23 @@ namespace Consist.Model
 			}
 		}
 
-		public static Container LoadFrom(string metadataFile)
+		public static MetadataContainer LoadFrom(string metadataFile)
 		{
-			var cont = new Container();
+			var cont = new MetadataContainer();
 			cont.Load(metadataFile);
 			return cont;
 		}
 
+		string _metadataFile;
+
 		public void Load(string metadataFile)
 		{
+			_metadataFile = metadataFile;
+			if (!File.Exists(metadataFile))
+			{
+				return;
+			}
+
 			using (var file = File.OpenRead(metadataFile))
 			{
 				using (var br = new BinaryReader(file))

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Media;
 using Consist.Utils;
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading;
 
 using Icon = System.Drawing.Icon;
@@ -22,13 +23,17 @@ namespace Consist.ViewModel
 		private readonly Record _record;
 		private readonly string _customName;
 		private readonly FileSystemInfo _info;
+		private readonly DirectoryInfo _infoDir;
+		private readonly FileInfo _infoFile;
 		private readonly bool _isFolder;
 
 		public RecordViewModel(FileSystemInfo info, string customName = null)
 		{
 			_customName = customName;
 			_info = info;
-			_isFolder = info is DirectoryInfo;
+			_infoDir = info as DirectoryInfo;
+			_infoFile = info as FileInfo;
+			_isFolder = _infoDir != null;
 		}
 
 		public string Name
@@ -65,7 +70,7 @@ namespace Consist.ViewModel
 						{
 							_icon = ShellManager.GetIcon(_info.FullName, false);
 						}
-						MainThread.Invoke(delegate
+						MainThread.Invoke("get_ImageSource deferred part", delegate
 						{
 							OnPropertyChanged(nameof(ImageSource));
 						});
@@ -89,12 +94,138 @@ namespace Consist.ViewModel
 			}
 		}
 
-		public int Size
+		private long? _size;
+		public long? Size
 		{
-			get { return 0; }
+			get
+			{
+				if (_size is null)
+				{
+					Task.Run(delegate
+					{
+						if (_isFolder)
+						{
+							_size = default;
+						}
+						else
+						{
+							_size = _infoFile.Length;
+							MainThread.Invoke("get_Size deferred part", delegate
+							{
+								OnPropertyChanged(nameof(Size));
+							});
+						}
+					});
+				}
+				return _size;
+			}
+		}
+		DateTime? _lastChange;
+		public DateTime? LastChange
+		{
+			get
+			{
+				if (_lastChange is null)
+				{
+					Task.Run(delegate
+					{
+						_lastChange = _info.LastWriteTimeUtc;
+						MainThread.Invoke("get_LastChange deferred part",
+							() => OnPropertyChanged(nameof(LastChange)));
+					});
+				}
+				return _lastChange;
+			}
 		}
 
-		public int Items { get; set; }
+		public int? Items
+		{
+			get
+			{
+				if (_isFolder)
+				{
+					return default;
+				}
+				else
+				{
+					return 1;
+				}
+			}
+		}
+
+		private string _attributes;
+		public string Attributes
+		{
+			get
+			{
+				if (_attributes == null)
+				{
+					Task.Run(delegate
+					{
+						var r = "";
+						var a = _info.Attributes;
+						var orig = a;
+
+						if ((a & FileAttributes.ReadOnly) > 0)
+						{
+							r += "R";
+							a &= ~FileAttributes.ReadOnly;
+						}
+						if ((a & FileAttributes.Hidden) > 0)
+						{
+							r += "H";
+							a &= ~FileAttributes.Hidden;
+						}
+						if ((a & FileAttributes.System) > 0)
+						{
+							r += "S";
+							a &= ~FileAttributes.System;
+						}
+						if ((a & FileAttributes.Archive) > 0)
+						{
+							r += "A";
+							a &= ~FileAttributes.Archive;
+						}
+						if ((a & FileAttributes.Encrypted) > 0)
+						{
+							r += "E";
+							a &= ~FileAttributes.Encrypted;
+						}
+						if ((a & FileAttributes.Compressed) > 0)
+						{
+							r += "C";
+							a &= ~FileAttributes.Compressed;
+						}
+
+						if (_isFolder)
+						{
+							a &= ~FileAttributes.Directory;
+						}
+
+						if (a == 0)
+						{
+							_attributes = r;
+						}
+						else if ((int) orig == -1)
+						{
+							_attributes = "(0x" + (((int) orig).ToString("X8")) + ")";
+						}
+						else
+						{
+							_attributes = r + " " + a + " (0x" + (((int) orig).ToString("X8")) + ")";
+						}
+
+						MainThread.Invoke("get_Attributes deferred part", delegate
+						{
+							OnPropertyChanged(nameof(Attributes));
+						});
+					});
+				}
+
+				return _attributes;
+			}
+
+		}
 
 		private bool? _isExpanded;
 
@@ -102,10 +233,12 @@ namespace Consist.ViewModel
 		{
 			get
 			{
+				/*
 				if (Name == "D:\\")
 				{
 					return _isExpanded ?? true;
 				}
+				*/
 				return _isExpanded ?? false;
 			}
 			set
@@ -114,6 +247,12 @@ namespace Consist.ViewModel
 				OnPropertyChanged();
 			}
 		}
+
+		public double? Percentage
+		{
+			get { return default; }
+		}
+
 
 		private string _error;
 
@@ -133,54 +272,104 @@ namespace Consist.ViewModel
 		{
 			get
 			{
-				if (_children == null)
-				{
-					var children = new ObservableCollection<RecordViewModel>();
-					_children = children;
-
-					Task.Run(RescanChildren);
-				}
-
+				PopulateChildren(false);
 				return _children;
 			}
 		}
 
-		public bool HasItems => Children.Any();
-
-		[DebuggerNonUserCode]
-		[DebuggerStepThrough]
-		async void RescanChildren()
+		void PopulateChildren(bool any)
 		{
+			// call to this method is thread safe
+			if (_isFolder)
+			{
+				if (_children == null)
+				{
+					_children = new ObservableCollection<RecordViewModel>();
+					Task.Run(() => RescanChildren(any));
+				}
+			}
+		}
+
+		public bool HasItems
+		{
+			get
+			{
+				if (_isFolder)
+				{
+					return Children.Any();
+					// PopulateChildren(true);
+					// return _children.Any();
+				}
+
+				return false;
+			}
+		}
+
+		// [DebuggerNonUserCode]
+		// [DebuggerStepThrough]
+		async void RescanChildren(bool any)
+		{
+			// call to this method is NOT thread safe
 #if DELAY
 			await Task.Delay(1000);
 #endif
 			MainThread.AssertNotUiThread();
-			if (_info is DirectoryInfo di)
+			lock (_children)
 			{
-				try
+				if (_info is DirectoryInfo di)
 				{
-					var list = new List<RecordViewModel>();
-					foreach (var sub in di.EnumerateFileSystemInfos())
+					try
 					{
-						list.Add(new RecordViewModel(sub));
-					}
+						var firstPush = false;
 
-					if (list.Any())
-					{
-						MainThread.Invoke(delegate
+						void Push(IEnumerable<RecordViewModel> items)
 						{
-							for (int i = 0; i < list.Count; i++)
+							MainThread.Invoke($"Children rescan push batch {_info.FullName}... ", lst =>
 							{
-								_children.Add(list[i]);
-							}
+								if (!firstPush)
+								{
+									_children.Clear();
+								}
 
-							OnPropertyChanged(nameof(HasItems));
-						});
+								foreach (var item in lst)
+								{
+									_children.Add(item);
+								}
+
+								if (!firstPush)
+								{
+									firstPush = true;
+									OnPropertyChanged(nameof(HasItems));
+								}
+							}, items);
+						}
+
+						int c = 0;
+						var list = new List<RecordViewModel>();
+						foreach (var sub in di.EnumerateFileSystemInfos())
+						{
+							var model = new RecordViewModel(sub);
+							list.Add(model);
+							if (any)
+							{
+								break; // this is enough for now
+							}
+							if (++c % 100 == 0)
+							{
+								Push(list);
+								list = new List<RecordViewModel>();
+							}
+						}
+
+						if (list.Any())
+						{
+							Push(list);
+						}
 					}
-				}
-				catch (Exception ex)
-				{
-					Error = ex.Message;
+					catch (Exception ex)
+					{
+						Error = ex.Message;
+					}
 				}
 			}
 		}

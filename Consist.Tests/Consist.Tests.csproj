@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="HashAlgoListTests.cs" />
     <Compile Include="HashPerformanceCalculation.cs" />
+    <Compile Include="PersistedMetadataProviderTests.cs" />
     <Compile Include="ScannerTests.cs" />
     <Compile Include="SnapshotCalculation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -58,6 +59,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Consist.Implementation\Consist.Implementation.csproj">
+      <Project>{74547224-db5d-4130-896a-4ac7b3c26269}</Project>
+      <Name>Consist.Implementation</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Consist.Model\Consist.Model.csproj">
       <Project>{3cf5c253-0720-497d-9d3b-f3d9026163a4}</Project>
       <Name>Consist.Model</Name>

@@ -6,6 +6,7 @@
 		xmlns:local="clr-namespace:Consist.View"
 		xmlns:model="clr-namespace:Consist.Model;assembly=Consist.Model"
 		xmlns:viewModel="clr-namespace:Consist.ViewModel"
+		xmlns:gl="clr-namespace:System.Globalization;assembly=mscorlib"
 		mc:Ignorable="d"
 		d:DesignHeight="850" d:DesignWidth="800">
 	<Grid HorizontalAlignment="Stretch">
@@ -47,17 +48,17 @@
 		<GridSplitter Grid.Column="1"/>
 		<Border Grid.Column="2" >
 
-			<local:TreeListView ItemsSource="{Binding}" AllowsColumnReorder="True" SnapsToDevicePixels="True">
-			<local:TreeListView.ItemTemplate>
-				<HierarchicalDataTemplate ItemsSource="{Binding Children}" />
-			</local:TreeListView.ItemTemplate>
+			<local:TreeListView ItemsSource="{Binding}" AllowsColumnReorder="True" SnapsToDevicePixels="True" KeyDown="TreeListView_KeyDown">
+				<local:TreeListView.ItemTemplate>
+					<HierarchicalDataTemplate ItemsSource="{Binding Children}" />
+				</local:TreeListView.ItemTemplate>
 
-			<local:TreeListView.Columns>
+				<local:TreeListView.Columns>
 
-					<GridViewColumn Header="Name" Width="200">
+					<GridViewColumn Header="Name" Width="300">
 						<GridViewColumn.CellTemplate>
 							<DataTemplate>
-								<StackPanel Orientation="Horizontal">
+								<StackPanel Orientation="Horizontal" MouseDown="StackPanel_MouseDown" KeyDown="StackPanel_KeyDown">
 									<local:TreeListViewExpander Focusable="False" />
 									<Image Source="{Binding ImageSource}" Margin="4 0" Focusable="False" />
 									<TextBlock Text="{Binding Name}" Margin="4 0" />
@@ -66,36 +67,49 @@
 						</GridViewColumn.CellTemplate>
 					</GridViewColumn>
 
-					<GridViewColumn Header="Children" Width="100">
-					<GridViewColumn.CellTemplate>
-						<DataTemplate>
-							<!--Display the size of the DataElement-->
-							<TextBlock Text="{Binding Count}" HorizontalAlignment="Right"/>
-						</DataTemplate>
-					</GridViewColumn.CellTemplate>
-				</GridViewColumn>
+					<GridViewColumn Header="Percentage" Width="80">
+						<GridViewColumn.CellTemplate>
+							<DataTemplate>
+								<TextBlock Text="{Binding Percentage}" HorizontalAlignment="Right"/>
+							</DataTemplate>
+						</GridViewColumn.CellTemplate>
+					</GridViewColumn>
 
-				<GridViewColumn Header="Brush" Width="100">
-					<GridViewColumn.CellTemplate>
-						<DataTemplate>
-							<StackPanel Orientation="Horizontal">
-								<!--Border showing the actual color-->
-								<Border 
-									Background="{Binding Brush}"
-									CornerRadius="2"
-									Width="16"
-									Height="16"
-									BorderThickness="1"
-									BorderBrush="DarkGray"/>
-								<!--Display the brush-->
-								<TextBlock Text="{Binding Property2}"/>
-							</StackPanel>
-						</DataTemplate>
-					</GridViewColumn.CellTemplate>
-				</GridViewColumn>
-			</local:TreeListView.Columns>
-		</local:TreeListView>
+					<GridViewColumn Header="Size" Width="75">
+						<GridViewColumn.CellTemplate>
+							<DataTemplate>
+								<TextBlock Text="{Binding Size, Converter={StaticResource SizeConvert}}" HorizontalAlignment="Right"/>
+							</DataTemplate>
+						</GridViewColumn.CellTemplate>
+					</GridViewColumn>
+
+					<GridViewColumn Header="Items" Width="75">
+						<GridViewColumn.CellTemplate>
+							<DataTemplate>
+								<TextBlock Text="{Binding Items}" HorizontalAlignment="Right"/>
+							</DataTemplate>
+						</GridViewColumn.CellTemplate>
+					</GridViewColumn>
+
+					<GridViewColumn Header="LastChange" Width="150">
+						<GridViewColumn.CellTemplate>
+							<DataTemplate>
+								<TextBlock Text="{Binding LastChange, Converter={StaticResource TimeToLocal}, StringFormat='g', ConverterCulture={x:Static gl:CultureInfo.CurrentUICulture}}"/>
+							</DataTemplate>
+						</GridViewColumn.CellTemplate>
+					</GridViewColumn>
+
+					<GridViewColumn Header="Attributes" Width="150">
+						<GridViewColumn.CellTemplate>
+							<DataTemplate>
+								<TextBlock Text="{Binding Attributes}"/>
+							</DataTemplate>
+						</GridViewColumn.CellTemplate>
+					</GridViewColumn>
+
+				</local:TreeListView.Columns>
+			</local:TreeListView>
 		</Border>
-		
+
 	</Grid>
 </UserControl>

@@ -24,7 +24,7 @@ namespace Consist.ViewModel
 			MainThread.AssertNotUiThread();
 			foreach (var drive in DriveInfo.GetDrives())
 			{
-				MainThread.Invoke(delegate
+				MainThread.Invoke("TreeRoot RefreshAsync add drive", delegate
 				{
 					Add(new RecordViewModel(drive.RootDirectory, drive.Name)
 					{

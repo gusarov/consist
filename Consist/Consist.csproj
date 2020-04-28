@@ -64,6 +64,8 @@
     <Compile Include="Utils\MainThread.cs" />
     <Compile Include="Utils\ShellManager_WPF.cs" />
     <Compile Include="Utils\ShellManager_Drawing.cs" />
+    <Compile Include="ViewModel\ConvertDateTimeToLocal.cs" />
+    <Compile Include="ViewModel\ConvertSizeToString.cs" />
     <Compile Include="ViewModel\RecordViewModel.cs" />
     <Compile Include="ViewModel\SnapshotViewModel.cs" />
     <Compile Include="ViewModel\TreeRootViewModel.cs" />
@@ -88,7 +90,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="HashAlgo\HashAlgoProfiler.cs" />
-    <Compile Include="Logic\Collector.cs" />
     <Compile Include="HashAlgo\HashAlgoList.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using Consist.Logic;
+using Consist.Implementation;
 using Consist.Model;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -13,10 +13,10 @@ namespace Consist.Tests
 		[TestInitialize]
 		public void ContainerTestsInit()
 		{
-			Collector = new Collector(Directory.GetCurrentDirectory() + "\\data");
+			Collector = new Analyzer(Directory.GetCurrentDirectory() + "\\data");
 		}
 
-		public Collector Collector;
+		public Analyzer Collector;
 
 		[TestMethod]
 		public void Should_10_save_metadata()
@@ -30,7 +30,7 @@ namespace Consist.Tests
 
 			Collector.Container.Save(".consist.metadata");
 
-			var container = new Container();
+			var container = new MetadataContainer();
 			container.Load(".consist.metadata");
 
 			var rec1 = container.Get("\\abc\\test1.txt");
@@ -61,7 +61,7 @@ namespace Consist.Tests
 
 			Assert.IsTrue(len < 40_000, len.ToString());
 
-			var container = new Container();
+			var container = new MetadataContainer();
 			container.Load(".consist.metadata");
 
 			for (var i = 0; i < 1000; i++)

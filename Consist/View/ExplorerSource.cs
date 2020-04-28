@@ -19,7 +19,7 @@ namespace Consist.View
 
 		}
 
-		private Container _container;
+		private MetadataContainer _container;
 
 		private IEnumerable<Record> _records;
 		public IEnumerable<Record> Records => _records;

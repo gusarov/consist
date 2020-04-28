@@ -1,11 +1,11 @@
-﻿using Consist.Logic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Consist.Implementation;
 
 namespace Consist.Tests
 {
@@ -59,10 +59,10 @@ namespace Consist.Tests
 		[TestInitialize]
 		public void ScannerTestsInit()
 		{
-			Collector = new Collector(Directory.GetCurrentDirectory());
+			Collector = new Analyzer(Directory.GetCurrentDirectory());
 		}
 
-		public Collector Collector;
+		public Analyzer Collector;
 
 		[TestMethod]
 		public void Should_0_isolate_tests()

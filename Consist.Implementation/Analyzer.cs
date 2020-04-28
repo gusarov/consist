@@ -1,19 +1,17 @@
-﻿using Consist.Model;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+using Consist.Model;
 
-namespace Consist.Logic
+namespace Consist.Implementation
 {
-	public class Collector
+	public class Analyzer
 	{
 		private readonly string _path;
+		private readonly PersistedMetadataProvider _persistedMetadataProvider;
 
-		public Collector(string path)
+		public Analyzer(string path, PersistedMetadataProvider persistedMetadataProvider = null, MetadataContainer container = null)
 		{
 			if (!Path.IsPathRooted(path))
 			{
@@ -21,9 +19,15 @@ namespace Consist.Logic
 			}
 
 			_path = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+			_persistedMetadataProvider = persistedMetadataProvider ?? PersistedMetadataProvider.Instance;
+			Container = container ?? _persistedMetadataProvider.GetContainer(path);
 		}
 
-		public Container Container { get; set; } = new Container();
+		public void EnqueueScan(string path, AnalyzerContext ctx)
+		{
+		}
+
+		public MetadataContainer Container { get; }
 
 		public void Scan()
 		{

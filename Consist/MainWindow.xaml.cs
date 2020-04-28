@@ -29,7 +29,7 @@ namespace Consist
 			Task.Run(async delegate
 			{
 				await Task.Delay(100);
-				MainThread.Invoke(delegate
+				MainThread.Invoke("Main Window Ctor", delegate
 				{
 					// Height = 1200;
 					WindowState = WindowState.Maximized;

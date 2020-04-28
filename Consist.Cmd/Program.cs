@@ -1,4 +1,4 @@
-﻿using Consist.Logic;
+﻿using Consist.Implementation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +20,7 @@ namespace Consist.Cmd
 						var dir = args[++i];
 						var metadata = args[++i];
 
-						var scan = new Collector(dir);
+						var scan = new Analyzer(dir);
 						scan.Scan();
 						Console.WriteLine(scan.Container.GetSize());
 						scan.Container.Save(metadata);
