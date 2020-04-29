@@ -95,6 +95,7 @@ namespace Consist.Model
 
 		public void Save(string metadataFile)
 		{
+			Directory.CreateDirectory(Path.GetDirectoryName(metadataFile));
 			using (var file = File.OpenWrite(metadataFile))
 			{
 				_metadataFile = metadataFile;

@@ -13,10 +13,19 @@ namespace Consist.Tests
 		[TestInitialize]
 		public void ContainerTestsInit()
 		{
-			Collector = new Analyzer(Directory.GetCurrentDirectory() + "\\data");
+			Analyzer = new Analyzer(Directory.GetCurrentDirectory() + "\\data");
 		}
 
-		public Analyzer Collector;
+		public Analyzer Analyzer;
+
+		void Scan()
+		{
+			Analyzer.Scan(new AnalyzerContext
+			{
+				ScanSubfolders = true,
+				CalculateHashSum = true,
+			});
+		}
 
 		[TestMethod]
 		public void Should_10_save_metadata()
@@ -26,9 +35,9 @@ namespace Consist.Tests
 			Directory.CreateDirectory("data\\abc");
 			File.WriteAllText("data\\abc\\test1.txt", "test data1");
 			File.WriteAllText("data\\abc\\test2.txt", "test data2");
-			Collector.Scan();
+			Scan();
 
-			Collector.Container.Save(".consist.metadata");
+			Analyzer.Container.Save(".consist.metadata");
 
 			var container = new MetadataContainer();
 			container.Load(".consist.metadata");
@@ -52,8 +61,8 @@ namespace Consist.Tests
 			{
 				File.WriteAllText($"data\\{folder}\\test{i}.txt", "test data");
 			}
-			Collector.Scan();
-			Collector.Container.Save(".consist.metadata");
+			Scan();
+			Analyzer.Container.Save(".consist.metadata");
 
 			var len = new FileInfo(".consist.metadata").Length;
 

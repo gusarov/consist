@@ -12,6 +12,20 @@ namespace Consist.Utils
 		private static object _lock = new object();
 		public static Icon GetIcon(string path, bool isFolder, FileInfoFlags extra = FileInfoFlags.SmallIcon)
 		{
+			/*
+			if (!isFolder)
+			{
+				try
+				{
+					return Icon.ExtractAssociatedIcon(path);
+				}
+				catch
+				{
+					return null;
+				}
+			}
+			*/
+
 			var attributes = isFolder ? FileInfoAttribute.Directory : FileInfoAttribute.File;
 			var flags = FileInfoFlags.Icon | FileInfoFlags.UseFileAttributes | extra;
 
@@ -29,7 +43,7 @@ namespace Consist.Utils
 
 			try
 			{
-				return (Icon) Icon.FromHandle(fileInfo.hIcon).Clone();
+				return Icon.FromHandle(fileInfo.hIcon);
 			}
 			catch
 			{
@@ -37,7 +51,7 @@ namespace Consist.Utils
 			}
 			finally
 			{
-				User32.DestroyIcon(fileInfo.hIcon);
+				// User32.DestroyIcon(fileInfo.hIcon);
 			}
 		}
 

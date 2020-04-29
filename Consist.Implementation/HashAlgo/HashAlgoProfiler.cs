@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Consist.HashAlgo
+namespace Consist.Implementation.HashAlgo
 {
 	public class ProfilingResult
 	{

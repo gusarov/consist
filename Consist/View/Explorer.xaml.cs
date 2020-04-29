@@ -25,8 +25,10 @@ namespace Consist.View
 		public Explorer()
 		{
 			InitializeComponent();
-			DataContext = RootDataContext.Instance.TreeRoot;
+			base.DataContext = RootDataContext.Instance.TreeRoot;
 		}
+
+		private new TreeRootViewModel DataContext => (TreeRootViewModel) base.DataContext;
 
 		private void StackPanel_MouseDown(object sender, MouseButtonEventArgs e)
 		{
@@ -84,6 +86,36 @@ namespace Consist.View
 				var m = tlv.SelectedItem;
 				var v = tlv.SelectedValue;
 			}
+		}
+
+		private void Scan(object sender, ExecutedRoutedEventArgs e)
+		{
+			DataContext.Root.Scan((RecordViewModel) e.Parameter, new Implementation.AnalyzerContext
+			{
+				ScanSubfolders = true,
+				CalculateHashSum = false,
+			});
+		}
+		private void ScanHash(object sender, ExecutedRoutedEventArgs e)
+		{
+			DataContext.Root.Scan((RecordViewModel)e.Parameter, new Implementation.AnalyzerContext
+			{
+				ScanSubfolders = true,
+				CalculateHashSum = true,
+			});
+		}
+		private void Pin(object sender, ExecutedRoutedEventArgs e)
+		{
+			DataContext.Root.Pin((RecordViewModel)e.Parameter);
+		}
+
+		private void Can_Scan(object sender, CanExecuteRoutedEventArgs e)
+		{
+			e.CanExecute = e.Parameter is RecordViewModel;
+		}
+		private void Can_Pin(object sender, CanExecuteRoutedEventArgs e)
+		{
+			e.CanExecute = e.Parameter is RecordViewModel;
 		}
 	}
 }

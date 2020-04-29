@@ -143,7 +143,7 @@ namespace Consist.Utils
 			// this is also locked over _queue
 			if (!_dequeuerScheduled)
 			{
-				Debug.WriteLine("Scheduling Dequeuer...");
+				// Debug.WriteLine("Scheduling Dequeuer...");
 				_dequeuerScheduled = true;
 				_dispatcher.BeginInvoke((Action) Dequeuer, DispatcherPriority.ContextIdle);
 			}
@@ -151,7 +151,7 @@ namespace Consist.Utils
 
 		static void Dequeuer()
 		{
-			Debug.WriteLine("Dequeuer started...");
+			// Debug.WriteLine("Dequeuer started...");
 
 			try
 			{
@@ -194,7 +194,7 @@ namespace Consist.Utils
 				} while (time < 60);
 
 #if DEBUG
-				Debug.WriteLine($"Dequeuer processed {cnt} items at once during {time}ms:\r\n {string.Join("\r\n", processed)}");
+				// Debug.WriteLine($"Dequeuer processed {cnt} items at once during {time}ms:\r\n {string.Join("\r\n", processed)}");
 #endif
 			}
 			finally

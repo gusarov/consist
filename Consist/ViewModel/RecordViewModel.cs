@@ -15,6 +15,7 @@ using System.Threading;
 using Icon = System.Drawing.Icon;
 using Consist.Interop;
 using Consist.View;
+using System.Windows.Input;
 
 namespace Consist.ViewModel
 {
@@ -36,6 +37,11 @@ namespace Consist.ViewModel
 			_isFolder = _infoDir != null;
 		}
 
+		public string LocalPath
+		{
+			get { return _info.FullName; }
+		}
+
 		public string Name
 		{
 			get { return _customName ?? _info.Name; }
@@ -43,38 +49,81 @@ namespace Consist.ViewModel
 
 		private bool _iconRequested;
 
+		private static readonly Dictionary<string, ImageSource> _iconByExt = new Dictionary<string, ImageSource>(StringComparer.OrdinalIgnoreCase);
 		private Icon _icon;
 
-		private static ImageSource _imageSourceDefaultFolder = ShellManager.GetImageSource(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), false, true);
+		private static readonly Lazy<ImageSource> _imageSourceDefaultFolder = new Lazy<ImageSource>(() =>
+		{
+			MainThread.AssertUiThread();
+			return ShellManager.GetImageSource(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+				false, true);
+		});
 
-		private static ImageSource _imageSourceDefaultFile = ShellManager.GetImageSource(".ttt", false, false);
+		private static ImageSource ImageSourceDefaultFolder
+		{
+			get
+			{
+				return _imageSourceDefaultFolder.Value;
+			}
+		}
+
+		// private static ImageSource _imageSourceDefaultFile = ShellManager.GetImageSource(".ttt", false, false);
+
+		private static readonly HashSet<string> _iconNeeded = new HashSet<string>()
+		{
+			".exe",
+			".lnk",
+		};
+
+		bool NeedIcon()
+		{
+			if (!_isFolder)
+			{
+				return _iconNeeded.Contains(Path.GetExtension(_infoFile.Name).ToLowerInvariant());
+			}
+
+			return true; // folders and drives have decorators
+		}
 
 		private ImageSource _imageSource;
 		public ImageSource ImageSource
 		{
 			get
 			{
+				MainThread.AssertUiThread();
 				if (!_iconRequested)
 				{
 					_iconRequested = true;
-					Task.Run(async delegate
+					if (NeedIcon())
 					{
+						MainThread.Invoke("ImageSource Icon Request",
+						// Task.Run(
+						delegate
+						{
 #if DELAY
 						await Task.Delay(500);
 #endif
-						if (_info is DirectoryInfo di)
-						{
-							_icon = ShellManager.GetIcon(_info.FullName, true);
-						}
-						else if (_info is FileInfo fi)
-						{
-							_icon = ShellManager.GetIcon(_info.FullName, false);
-						}
-						MainThread.Invoke("get_ImageSource deferred part", delegate
-						{
-							OnPropertyChanged(nameof(ImageSource));
+							if (_info is DirectoryInfo di)
+							{
+								var icon = ShellManager.GetIcon(_info.FullName, true);
+								if (icon != null)
+								{
+									_icon = icon;
+								}
+							}
+							else if (_info is FileInfo fi)
+							{
+								var icon = ShellManager.GetIcon(_info.FullName, false);
+								if (icon != null)
+								{
+									_icon = icon;
+								}
+							}
+
+							MainThread.Invoke("get_ImageSource deferred part",
+								delegate { OnPropertyChanged(nameof(ImageSource)); });
 						});
-					});
+					}
 				}
 
 				if (_imageSource == null)
@@ -83,11 +132,18 @@ namespace Consist.ViewModel
 					{
 						_imageSource = ShellManager.GetImageSource(_icon);
 					}
+					else if (_isFolder)
+					{
+						return ImageSourceDefaultFolder;
+					}
 					else
 					{
-						return _isFolder
-							? _imageSourceDefaultFolder
-							: _imageSourceDefaultFile;
+						var ext = Path.GetExtension(_info.Name);
+						if (!_iconByExt.TryGetValue(ext, out var extIcon))
+						{
+							_iconByExt[ext] = extIcon = ShellManager.GetImageSource(ext, false, false);
+						}
+						return extIcon;
 					}
 				}
 				return _imageSource;
@@ -266,48 +322,59 @@ namespace Consist.ViewModel
 			}
 		}
 
-		public ObservableCollection<RecordViewModel> _children;
+		ObservableCollection<RecordViewModel> _children;
 
 		public IEnumerable<RecordViewModel> Children
 		{
 			get
 			{
-				PopulateChildren(false);
+				if (_isFolder)
+				{
+					if (_children == null)
+					{
+						_children = new ObservableCollection<RecordViewModel>();
+						Task.Run(() => RescanChildren());
+					}
+				}
 				return _children;
 			}
 		}
 
-		void PopulateChildren(bool any)
-		{
-			// call to this method is thread safe
-			if (_isFolder)
-			{
-				if (_children == null)
-				{
-					_children = new ObservableCollection<RecordViewModel>();
-					Task.Run(() => RescanChildren(any));
-				}
-			}
-		}
-
+		private bool? _hasItems;
 		public bool HasItems
 		{
 			get
 			{
 				if (_isFolder)
 				{
-					return Children.Any();
-					// PopulateChildren(true);
-					// return _children.Any();
-				}
+					if (_hasItems == null)
+					{
+						Task.Run(delegate
+						{
+							try
+							{
+								_hasItems = _infoDir.EnumerateFileSystemInfos().Any();
+							}
+							catch
+							{
+								_hasItems = false;
+							}
 
-				return false;
+							if (_hasItems == false) // already been returned true
+							{
+								MainThread.Invoke("HasItems deferred", () => OnPropertyChanged(nameof(HasItems)));
+							}
+						});
+					}
+					return _hasItems ?? true;
+				}
+				return false; // file
 			}
 		}
 
 		// [DebuggerNonUserCode]
 		// [DebuggerStepThrough]
-		async void RescanChildren(bool any)
+		async void RescanChildren()
 		{
 			// call to this method is NOT thread safe
 #if DELAY
@@ -326,11 +393,6 @@ namespace Consist.ViewModel
 						{
 							MainThread.Invoke($"Children rescan push batch {_info.FullName}... ", lst =>
 							{
-								if (!firstPush)
-								{
-									_children.Clear();
-								}
-
 								foreach (var item in lst)
 								{
 									_children.Add(item);
@@ -350,10 +412,6 @@ namespace Consist.ViewModel
 						{
 							var model = new RecordViewModel(sub);
 							list.Add(model);
-							if (any)
-							{
-								break; // this is enough for now
-							}
 							if (++c % 100 == 0)
 							{
 								Push(list);

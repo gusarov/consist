@@ -25,6 +25,10 @@ namespace Consist.Model
 
 		public List<Record> SubRecords { get; set; }
 
+		public DateTime? LastModificationUtc { get; set; }
+
+		public FileAttributes? FileAttributes { get; set; }
+
 		public int GetSize() =>
 			Hash.GetSize()
 			+ KeyPath.Length * sizeof(char)

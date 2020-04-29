@@ -9,5 +9,6 @@
 		<viewmodel:ConvertDateTimeToLocal x:Key="TimeToLocal"/>
 		<viewmodel:ConvertSizeToString x:Key="SizeConvert" />
 		<viewmodel:ConvertSizeToStringOptions x:Key="SizeOptions"/>
+
     </Application.Resources>
 </Application>

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Security.Cryptography;
-using Consist.HashAlgo;
+using Consist.Implementation.HashAlgo;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Consist.Tests

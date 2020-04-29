@@ -8,6 +8,10 @@ namespace Consist.Implementation
 {
 	public class AnalyzerContext
 	{
-		public bool CalculateHashSum;
+		public bool ScanSubfolders { get; set; } = true;
+		public bool CalculateHashSum { get; set; }
+
+		public bool ReadAttributes => true;
+		public bool ReadModificationDate => true;
 	}
 }

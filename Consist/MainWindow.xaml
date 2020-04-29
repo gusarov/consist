@@ -3,12 +3,67 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-		xmlns:local="clr-namespace:Consist" xmlns:view="clr-namespace:Consist.View"
+		xmlns:local="clr-namespace:Consist"
+		xmlns:commands="clr-namespace:Consist.Commands"
+		xmlns:view="clr-namespace:Consist.View"
 		mc:Ignorable="d"
 		Title="Storage Inspector" Height="450" Width="800">
+
 	<Grid>
-		<view:Explorer Width="Auto">
-			
-		</view:Explorer>
+		<DockPanel>
+			<Menu DockPanel.Dock="Top">
+				<MenuItem Header="_File">
+					<MenuItem Header="_Agree" />
+					<Separator />
+					<MenuItem Header="_Save Snapshot As" />
+					<MenuItem Header="_Rescan Selected" />
+					<MenuItem Header="_Rescan Selected and read file hash" />
+					<MenuItem Header="_Rescan list of drives" />
+					<MenuItem Header="_Add to" >
+						<MenuItem Header="Pin Folder" />
+						<MenuItem Header="Scan group" />
+						<MenuItem Header="Hash group" />
+						<MenuItem Header="Temp folders to clean" />
+						<MenuItem Header="Temp folders to keep only for 14 days" />
+					</MenuItem>
+					<Separator />
+					<MenuItem Header="Copy Path" />
+					<Separator />
+					<MenuItem Header="_Options" />
+					<Separator />
+					<MenuItem Header="_Exit" />
+				</MenuItem>
+				<MenuItem Header="_Solution">
+					<MenuItem Header="Maintain Index" />
+					<MenuItem Header="Find duplicates" />
+					<MenuItem Header="Find by name" />
+					<MenuItem Header="Integrity Check" />
+					<MenuItem Header="Maintain backup">
+						<MenuItem Header="by archive attribute" />
+						<MenuItem Header="by date" />
+						<MenuItem Header="by hash" />
+					</MenuItem>
+					<MenuItem Header="Schedule">
+						<MenuItem Header="Maintain Index" />
+						<MenuItem Header="Windows Service" />
+						<MenuItem Header="Backups" />
+						<MenuItem Header="Integrity Check" />
+					</MenuItem>
+				</MenuItem>
+				<MenuItem Header="_Help">
+					<MenuItem Header="_Open Help" />
+					<MenuItem Header="_About" />
+				</MenuItem>
+			</Menu>
+			<Grid>
+				<view:Explorer Width="Auto">
+
+				</view:Explorer>
+				<view:IndexStats Margin="0 30 0 0" Background="#77FFFFFF" HorizontalAlignment="Right" VerticalAlignment="Top">
+
+				</view:IndexStats>
+			</Grid>
+		</DockPanel>
+
 	</Grid>
 </Window>

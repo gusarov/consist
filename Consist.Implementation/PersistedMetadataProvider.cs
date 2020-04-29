@@ -1,4 +1,5 @@
-﻿using Consist.Model;
+﻿using Consist.Implementation.Utils;
+using Consist.Model;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,7 +11,13 @@ using System.Threading.Tasks;
 
 namespace Consist.Implementation
 {
-	public class PersistedMetadataProvider
+	public interface IGlobalIndex
+	{
+		Record Get(string path);
+		void Set(string path, Record rec);
+	}
+
+	public class PersistedMetadataProvider : IGlobalIndex
 	{
 		public static PersistedMetadataProvider Instance = new PersistedMetadataProvider();
 
@@ -175,6 +182,20 @@ namespace Consist.Implementation
 
 		private readonly Dictionary<DriveInfo, MetadataContainer> _containers = new Dictionary<DriveInfo, MetadataContainer>();
 
+		MetadataContainer _gs;
+		public MetadataContainer GetContainerGlobalSettings()
+		{
+			if (_gs == null)
+			{
+				var container = new MetadataContainer();
+				var path = Path.Combine(GetDefaultMetadataPath(), $"GlobalSettings.consist");
+				container.Load(path); // if file not here - just remember where it should be
+				_gs = container;
+			}
+
+			return _gs;
+		}
+
 		public MetadataContainer GetContainer(string path)
 		{
 			foreach (var drive in DriveInfo.GetDrives())
@@ -215,6 +236,27 @@ namespace Consist.Implementation
 			container.Load(path); // if file not here - just remember where it should be
 
 			return container;
+		}
+
+		public Record Get(string path)
+		{
+			// find container
+			var container = GetContainer(path);
+
+			var root = Path.GetPathRoot(path);
+			var rel = path.Substring(root.Length).EnsureStartsFromDirectorySeparator();
+			return container.Get(rel);
+		}
+
+		public void Set(string path, Record rec)
+		{
+			// find container
+			var container = GetContainer(path);
+
+			// var root = Path.GetPathRoot(path);
+			// var rel = path.Substring(root.Length).EnsureStartsFromDirectorySeparator();
+
+			container.Put(rec);
 		}
 	}
 }

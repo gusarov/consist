@@ -59,10 +59,10 @@ namespace Consist.Tests
 		[TestInitialize]
 		public void ScannerTestsInit()
 		{
-			Collector = new Analyzer(Directory.GetCurrentDirectory());
+			Analyzer = new Analyzer(Directory.GetCurrentDirectory());
 		}
 
-		public Analyzer Collector;
+		public Analyzer Analyzer;
 
 		[TestMethod]
 		public void Should_0_isolate_tests()
@@ -77,13 +77,22 @@ namespace Consist.Tests
 			}
 		}
 
+		void Scan()
+		{
+			Analyzer.Scan(new AnalyzerContext
+			{
+				ScanSubfolders = true,
+				CalculateHashSum = true,
+			});
+		}
+
 		[TestMethod]
 		public void Should_10_scan_file()
 		{
 			File.WriteAllText("test.txt", "test data");
-			Collector.Scan();
+			Scan();
 
-			var rec = Collector.Container.Get("\\test.txt");
+			var rec = Analyzer.Container.Get("\\test.txt");
 
 			// md5('test data')
 			Assert.AreEqual("EB733A00C0C9D336E65691A37AB54293", rec.Hash.ToString());
@@ -95,9 +104,9 @@ namespace Consist.Tests
 			File.WriteAllText("test_hidden.txt", "test data");
 			File.SetAttributes("test_hidden.txt",
 				FileAttributes.Normal | FileAttributes.Hidden | FileAttributes.System);
-			Collector.Scan();
+			Scan();
 
-			var rec = Collector.Container.Get("\\test_hidden.txt");
+			var rec = Analyzer.Container.Get("\\test_hidden.txt");
 
 			// md5('test data')
 			Assert.AreEqual("EB733A00C0C9D336E65691A37AB54293", rec.Hash.ToString());
@@ -109,12 +118,12 @@ namespace Consist.Tests
 			Directory.CreateDirectory("abc");
 			File.WriteAllText("abc\\test1.txt", "test data1");
 			File.WriteAllText("abc\\test2.txt", "test data2");
-			Collector.Scan();
+			Scan();
 
-			var rec1 = Collector.Container.Get("\\abc\\test1.txt");
+			var rec1 = Analyzer.Container.Get("\\abc\\test1.txt");
 			Assert.AreEqual("634C3BFF7870EB5430A3CB355B88EE1A", rec1.Hash.ToString());
 
-			var rec2 = Collector.Container.Get("\\abc\\test2.txt");
+			var rec2 = Analyzer.Container.Get("\\abc\\test2.txt");
 			Assert.AreEqual("76E17179BC18263FBFBB16B35C228B88", rec2.Hash.ToString());
 
 		}
@@ -125,9 +134,9 @@ namespace Consist.Tests
 			Directory.CreateDirectory("abc");
 			File.WriteAllText("abc\\test1.txt", "test data1");
 			File.WriteAllText("abc\\test2.txt", "test data2");
-			Collector.Scan();
+			Scan();
 
-			var root = Collector.Container.Get("\\");
+			var root = Analyzer.Container.Get("\\");
 			Assert.IsNotNull(root);
 			Assert.AreEqual("\\", root.Name);
 			Assert.AreEqual("\\", root.KeyPath);
@@ -136,7 +145,7 @@ namespace Consist.Tests
 			var abc = root.SubRecords[0];
 			Assert.IsNotNull(abc);
 
-			var abcGet = Collector.Container.Get("\\abc\\");
+			var abcGet = Analyzer.Container.Get("\\abc\\");
 			Assert.AreSame(abc, abcGet);
 			Assert.AreEqual("abc", abc.Name);
 			Assert.AreEqual("\\abc\\", abc.KeyPath);
@@ -146,7 +155,7 @@ namespace Consist.Tests
 			var test1 = abc.SubRecords[0];
 			Assert.IsNotNull(test1);
 
-			var test1Get = Collector.Container.Get("\\abc\\test1.txt");
+			var test1Get = Analyzer.Container.Get("\\abc\\test1.txt");
 
 			Assert.AreSame(test1, test1Get);
 			Assert.AreEqual("test1.txt", test1.Name);

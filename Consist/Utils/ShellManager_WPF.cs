@@ -23,6 +23,15 @@ namespace Consist.Utils
 
 		public static ImageSource GetImageSource(Icon icon)
 		{
+			if (icon == null)
+			{
+				return null;
+			}
+
+			if (icon.Width == 0 || icon.Handle == default)
+			{
+				return null;
+			}
 			return Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromWidthAndHeight(icon.Width, icon.Height));
 		}
 

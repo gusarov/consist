@@ -60,16 +60,23 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Commands\CCommands.cs" />
     <Compile Include="Interop\Shell32.cs" />
+    <Compile Include="Utils\ListMaintainer.cs" />
     <Compile Include="Utils\MainThread.cs" />
     <Compile Include="Utils\ShellManager_WPF.cs" />
     <Compile Include="Utils\ShellManager_Drawing.cs" />
     <Compile Include="ViewModel\ConvertDateTimeToLocal.cs" />
     <Compile Include="ViewModel\ConvertSizeToString.cs" />
+    <Compile Include="ViewModel\DelegateCommand.cs" />
+    <Compile Include="ViewModel\Directory.cs" />
     <Compile Include="ViewModel\RecordViewModel.cs" />
     <Compile Include="ViewModel\SnapshotViewModel.cs" />
     <Compile Include="ViewModel\TreeRootViewModel.cs" />
     <Compile Include="ViewModel\ViewModel.cs" />
+    <Compile Include="View\GlobalSettings.xaml.cs">
+      <DependentUpon>GlobalSettings.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\ContainerSettings.xaml.cs">
       <DependentUpon>ContainerSettings.xaml</DependentUpon>
     </Compile>
@@ -77,6 +84,9 @@
       <DependentUpon>Explorer.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\ExplorerSource.cs" />
+    <Compile Include="View\IndexStats.xaml.cs">
+      <DependentUpon>IndexStats.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\ITreeListNode.cs" />
     <Compile Include="View\TreeListView.cs" />
     <Compile Include="View\IndentConverter.cs" />
@@ -89,8 +99,6 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="HashAlgo\HashAlgoProfiler.cs" />
-    <Compile Include="HashAlgo\HashAlgoList.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -99,11 +107,19 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="View\GlobalSettings.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="View\ContainerSettings.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="View\Explorer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\IndexStats.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -138,6 +154,10 @@
     <None Include="Resources\Icon\Semlabs-Web-Blog-Folder-search.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Consist.Implementation\Consist.Implementation.csproj">
+      <Project>{74547224-DB5D-4130-896A-4AC7B3C26269}</Project>
+      <Name>Consist.Implementation</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Consist.Model\Consist.Model.csproj">
       <Project>{3cf5c253-0720-497d-9d3b-f3d9026163a4}</Project>
       <Name>Consist.Model</Name>

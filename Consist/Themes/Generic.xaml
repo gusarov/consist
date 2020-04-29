@@ -40,19 +40,17 @@
 				<Setter Property="Foreground" 
                     Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
 			</Trigger>
-			<!--Trigger used to change the color based on selection-->
+			<!--Trigger used to change the color based on selection
 			<MultiTrigger>
 				<MultiTrigger.Conditions>
 					<Condition Property="IsSelected" Value="true"/>
 					<Condition Property="IsSelectionActive" Value="false"/>
 				</MultiTrigger.Conditions>
-				<!--Change the background color-->
 				<Setter TargetName="Border" Property="Background"
                     Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
-				<!--Change the foreground color-->
 				<Setter Property="Foreground" 
                     Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
-			</MultiTrigger>
+			</MultiTrigger>-->
 			<!--Trigger used to change the color based on the status of the item-->
 			<Trigger Property="IsEnabled" Value="false">
 				<!--Change the foreground color-->

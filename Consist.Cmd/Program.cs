@@ -1,7 +1,6 @@
 ﻿using Consist.Implementation;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -21,7 +20,9 @@ namespace Consist.Cmd
 						var metadata = args[++i];
 
 						var scan = new Analyzer(dir);
-						scan.Scan();
+						scan.Scan(new AnalyzerContext {
+							CalculateHashSum = true,
+						});
 						Console.WriteLine(scan.Container.GetSize());
 						scan.Container.Save(metadata);
 
