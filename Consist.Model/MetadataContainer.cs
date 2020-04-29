@@ -11,6 +11,9 @@ namespace Consist.Model
 		private readonly Dictionary<string, Record> _records = new Dictionary<string, Record>();
 		private readonly Dictionary<string, Record> _recordsVirtual = new Dictionary<string, Record>();
 
+		public string LocalRootPath => Metadata
+			.FirstOrDefault(x => x.MetadataRecordType == MetadataRecordType.OriginalPath)?.Value;
+
 		public Record Get(string key)
 		{
 			if (_recordsVirtual.TryGetValue(key, out var record))

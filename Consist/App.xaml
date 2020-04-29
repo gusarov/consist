@@ -10,6 +10,12 @@
 		<viewmodel:ConvertDateTimeToLocal x:Key="TimeToLocal"/>
 		<viewmodel:ConvertSizeToString x:Key="SizeConvert" />
 		<viewmodel:ConvertSizeToStringOptions x:Key="SizeOptions"/>
-
-    </Application.Resources>
+		<Style TargetType="MenuItem" x:Key="Hide">
+			<Style.Triggers>
+				<Trigger Property="IsEnabled" Value="False">
+					<Setter Property="Visibility" Value="Collapsed"/>
+				</Trigger>
+			</Style.Triggers>
+		</Style>
+	</Application.Resources>
 </Application>

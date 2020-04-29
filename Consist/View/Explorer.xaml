@@ -81,8 +81,8 @@
 										<ContextMenu>
 											<MenuItem Header="Sc_an" Command="{x:Static commands:CCommands.Scan}" CommandParameter="{Binding}" />
 											<MenuItem Header="_Hash" Command="{x:Static commands:CCommands.ScanHash}" CommandParameter="{Binding}" />
-											<MenuItem Header="_Pin to Root" Command="{x:Static commands:CCommands.Pin}" CommandParameter="{Binding}" Visibility="{Binding IsEnabled, RelativeSource={RelativeSource Mode=Self}, Converter={StaticResource btv}, ConverterParameter='C'}" />
-											<MenuItem Header="Unpin" Command="{x:Static commands:CCommands.Unpin}" CommandParameter="{Binding}" Visibility="{Binding IsEnabled, RelativeSource={RelativeSource Mode=Self}, Converter={StaticResource btv}, ConverterParameter='C'}" />
+											<MenuItem Header="_Pin to Root" Command="{x:Static commands:CCommands.Pin}" CommandParameter="{Binding}" Style="{StaticResource Hide}" />
+											<MenuItem Header="Unpin" Command="{x:Static commands:CCommands.Unpin}" CommandParameter="{Binding}" Style="{StaticResource Hide}" />
 
 											<MenuItem Header="{Binding Name}">
 												<MenuItem Header="Test21">

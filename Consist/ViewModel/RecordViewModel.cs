@@ -16,18 +16,27 @@ using Icon = System.Drawing.Icon;
 using Consist.Interop;
 using Consist.View;
 using System.Windows.Input;
+using System.ComponentModel;
 
 namespace Consist.ViewModel
 {
 	class RecordViewModel : ViewModel, ITreeListNode
 	{
 		private readonly Record _record;
+		private readonly MetadataContainer _container;
+		
 		private readonly string _customName;
+
+		[Obsolete]
 		private readonly FileSystemInfo _info;
+		[Obsolete]
 		private readonly DirectoryInfo _infoDir;
+		[Obsolete]
 		private readonly FileInfo _infoFile;
+
 		private readonly bool _isFolder;
 
+		[Obsolete]
 		public RecordViewModel(FileSystemInfo info, string customName = null, bool isPinnedToRoot = false)
 		{
 			_customName = customName;
@@ -38,16 +47,20 @@ namespace Consist.ViewModel
 			_isFolder = _infoDir != null;
 		}
 
-		public RecordViewModel(Record record, string customName = null, bool isPinnedToRoot = false)
+		public RecordViewModel(MetadataContainer container, Record record, string customName = null, bool isPinnedToRoot = false)
 		{
-			/*
+			_container = container;
+			_record = record;
 			_customName = customName;
 			IsPinnedToRoot = isPinnedToRoot;
+
+			/*
 			_info = info;
 			_infoDir = info as DirectoryInfo;
 			_infoFile = info as FileInfo;
-			_isFolder = _infoDir != null;
 			*/
+
+			_isFolder = _record.IsFolder;
 		}
 
 		public string ToolTip
@@ -65,12 +78,24 @@ namespace Consist.ViewModel
 
 		public string LocalPath
 		{
-			get { return _info.FullName; }
+			get
+			{
+				var lrp = _container.LocalRootPath;
+				if (string.IsNullOrEmpty(lrp))
+				{
+					throw new Exception("Container local path is unknown");
+				}
+				return Path.Combine(lrp, _record.KeyPath.TrimStart(Path.DirectorySeparatorChar));
+			}
 		}
 
 		public string Name
 		{
-			get { return _customName ?? _info.Name; }
+			get
+			{
+				return _customName ?? _record.Name;
+				// return _customName ?? _info.Name;
+			}
 		}
 
 		private bool _iconRequested;
@@ -85,13 +110,7 @@ namespace Consist.ViewModel
 				false, true);
 		});
 
-		private static ImageSource ImageSourceDefaultFolder
-		{
-			get
-			{
-				return _imageSourceDefaultFolder.Value;
-			}
-		}
+		private static ImageSource ImageSourceDefaultFolder => _imageSourceDefaultFolder.Value;
 
 		// private static ImageSource _imageSourceDefaultFile = ShellManager.GetImageSource(".ttt", false, false);
 
@@ -404,11 +423,13 @@ namespace Consist.ViewModel
 		// [DebuggerStepThrough]
 		async void RescanChildren()
 		{
+			return;
 			// call to this method is NOT thread safe
 #if DELAY
 			await Task.Delay(1000);
 #endif
 			MainThread.AssertNotUiThread();
+			/*
 			lock (_children)
 			{
 				if (_info is DirectoryInfo di)
@@ -458,6 +479,7 @@ namespace Consist.ViewModel
 					}
 				}
 			}
+			*/
 		}
 	}
 }

@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Consist.Model.Annotations;
 
 namespace Consist.Model
 {
-	public class Record : ISpace
+	public class Record : ISpace, INotifyPropertyChanged
 	{
 		public Record(string keyPath)
 		{
@@ -31,10 +34,22 @@ namespace Consist.Model
 
 		public int GetSize() =>
 			Hash.GetSize()
+
 			+ KeyPath.Length * sizeof(char)
+			+ IntPtr.Size // String Overhead
+
 			+ sizeof(long) // FileSize
+
 			+ IntPtr.Size // KeyPath pointer
+
 			+ IntPtr.Size // Hash pointer
+
+			+ IntPtr.Size // NPC
+
+			+ 12 // DateTime?
+
+			+ 4 // FileAttributes?
+
 			+ IntPtr.Size // class overhead
 		;
 
@@ -83,6 +98,8 @@ namespace Consist.Model
 			};
 		}
 
+		public bool IsFolder => KeyPath[KeyPath.Length - 1] == Path.DirectorySeparatorChar;
+
 		#region ViewModel
 
 		public string Name
@@ -98,5 +115,13 @@ namespace Consist.Model
 		}
 
 		#endregion
+
+		public event PropertyChangedEventHandler PropertyChanged;
+
+		[NotifyPropertyChangedInvocator]
+		protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+		{
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+		}
 	}
 }
