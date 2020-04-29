@@ -10,6 +10,8 @@
 		<CheckBox>Include Hidden Files</CheckBox>
 		<CheckBox>Show Compressed as Blue</CheckBox>
 		<CheckBox>Show Encrypted as Green</CheckBox>
+		<CheckBox>List Folders then Files</CheckBox>
+		<CheckBox>Sort by name</CheckBox>
 		<GroupBox Header="Files">
 			<StackPanel>
 				<RadioButton>Show Files and folders at the same level</RadioButton>

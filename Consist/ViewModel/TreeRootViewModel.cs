@@ -44,7 +44,7 @@ namespace Consist.ViewModel
 			{
 				if (!_viewModelsByPinnedLocal.TryGetValue(pin.Value, out var vm))
 				{
-					_viewModelsByPinnedLocal[pin.Value] = vm = new RecordViewModel(new DirectoryInfo(pin.Value));
+					_viewModelsByPinnedLocal[pin.Value] = vm = new RecordViewModel(new DirectoryInfo(pin.Value), isPinnedToRoot: true);
 				}
 				viewModels.Add(vm);
 			}
@@ -104,7 +104,7 @@ namespace Consist.ViewModel
 			});
 		}
 
-		internal void Pin(RecordViewModel parameter)
+		private MetadataContainer RemovePin(RecordViewModel parameter)
 		{
 			var set = _persistedMetadataProvider.GetContainerGlobalSettings();
 			var existing = set.Metadata.Where(x =>
@@ -114,6 +114,20 @@ namespace Consist.ViewModel
 			{
 				set.Metadata.Remove(item);
 			}
+
+			return set;
+		}
+
+		internal void Unpin(RecordViewModel parameter)
+		{
+			var set = RemovePin(parameter);
+			set.Save();
+			TreeRoot.RunRefresh();
+		}
+
+		internal void Pin(RecordViewModel parameter)
+		{
+			var set = RemovePin(parameter);
 			set.Metadata.Add(new MetadataRecord(MetadataRecordType.PinnedLocalFolder, parameter.LocalPath));
 			set.Save();
 			TreeRoot.RunRefresh();

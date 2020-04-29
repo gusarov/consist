@@ -6,6 +6,7 @@
              Startup="Application_Startup"
              >
     <Application.Resources>
+		<viewmodel:BooleanToVisibilityConverter x:Key="btv"/>
 		<viewmodel:ConvertDateTimeToLocal x:Key="TimeToLocal"/>
 		<viewmodel:ConvertSizeToString x:Key="SizeConvert" />
 		<viewmodel:ConvertSizeToStringOptions x:Key="SizeOptions"/>

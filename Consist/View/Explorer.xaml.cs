@@ -108,6 +108,10 @@ namespace Consist.View
 		{
 			DataContext.Root.Pin((RecordViewModel)e.Parameter);
 		}
+		private void Unpin(object sender, ExecutedRoutedEventArgs e)
+		{
+			DataContext.Root.Unpin((RecordViewModel)e.Parameter);
+		}
 
 		private void Can_Scan(object sender, CanExecuteRoutedEventArgs e)
 		{
@@ -115,7 +119,12 @@ namespace Consist.View
 		}
 		private void Can_Pin(object sender, CanExecuteRoutedEventArgs e)
 		{
-			e.CanExecute = e.Parameter is RecordViewModel;
+			e.CanExecute = e.Parameter is RecordViewModel r && !r.IsPinnedToRoot;
+		}
+
+		private void Can_Unpin(object sender, CanExecuteRoutedEventArgs e)
+		{
+			e.CanExecute = e.Parameter is RecordViewModel r && r.IsPinnedToRoot;
 		}
 	}
 }

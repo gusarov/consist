@@ -14,6 +14,7 @@
 		<CommandBinding Command="{x:Static commands:CCommands.Scan}" Executed="Scan" CanExecute="Can_Scan" />
 		<CommandBinding Command="{x:Static commands:CCommands.ScanHash}" Executed="ScanHash" CanExecute="Can_Scan" />
 		<CommandBinding Command="{x:Static commands:CCommands.Pin}" Executed="Pin" CanExecute="Can_Pin" />
+		<CommandBinding Command="{x:Static commands:CCommands.Unpin}" Executed="Unpin" CanExecute="Can_Unpin" />
 	</UserControl.CommandBindings>
 	<Grid HorizontalAlignment="Stretch">
 		<Grid.ColumnDefinitions>
@@ -41,7 +42,8 @@
 					<HierarchicalDataTemplate DataType="{x:Type viewModel:RecordViewModel}" ItemsSource="{Binding Children}">
 						<StackPanel Orientation="Horizontal" Margin="0 2">
 							<Image Source="{Binding ImageSource}" />
-							<TextBlock Text="{Binding Name}" Margin="4 0" />
+							<TextBlock Text="{Binding Name}" Margin="4 0" ToolTip="{Binding LocalPath}" />
+							<Button Content="{Binding Name}" Margin="4 0" ToolTip="{Binding LocalPath}"  />
 							<!--
 						<TextBlock> |</TextBlock>
 						<TextBlock Text="{Binding Size}" />
@@ -72,12 +74,15 @@
 									<Border Margin="6 0 2 0" Width="16" Height="16">
 										<Image Source="{Binding ImageSource}" Focusable="False"/>
 									</Border>
-									<TextBlock Text="{Binding Name}" Margin="4 0 2 0" />
+									<TextBlock Text="{Binding Name}" Margin="4 0 2 0" ToolTip="{Binding ToolTip}" />
+									<!--<Button Content="{Binding Name}" Margin="4 0 2 0" ToolTip="{Binding LocalPath}"  /-->
+
 									<StackPanel.ContextMenu>
 										<ContextMenu>
 											<MenuItem Header="Sc_an" Command="{x:Static commands:CCommands.Scan}" CommandParameter="{Binding}" />
 											<MenuItem Header="_Hash" Command="{x:Static commands:CCommands.ScanHash}" CommandParameter="{Binding}" />
-											<MenuItem Header="_Pin to Root" Command="{x:Static commands:CCommands.Pin}" CommandParameter="{Binding}" />
+											<MenuItem Header="_Pin to Root" Command="{x:Static commands:CCommands.Pin}" CommandParameter="{Binding}" Visibility="{Binding IsEnabled, RelativeSource={RelativeSource Mode=Self}, Converter={StaticResource btv}, ConverterParameter='C'}" />
+											<MenuItem Header="Unpin" Command="{x:Static commands:CCommands.Unpin}" CommandParameter="{Binding}" Visibility="{Binding IsEnabled, RelativeSource={RelativeSource Mode=Self}, Converter={StaticResource btv}, ConverterParameter='C'}" />
 
 											<MenuItem Header="{Binding Name}">
 												<MenuItem Header="Test21">

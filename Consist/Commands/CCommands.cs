@@ -12,5 +12,6 @@ namespace Consist.Commands
 		public static RoutedCommand Scan { get; } = new RoutedCommand();
 		public static RoutedCommand ScanHash { get; } = new RoutedCommand();
 		public static RoutedCommand Pin { get; } = new RoutedCommand();
+		public static RoutedCommand Unpin { get; } = new RoutedCommand();
 	}
 }

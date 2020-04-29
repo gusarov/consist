@@ -28,13 +28,39 @@ namespace Consist.ViewModel
 		private readonly FileInfo _infoFile;
 		private readonly bool _isFolder;
 
-		public RecordViewModel(FileSystemInfo info, string customName = null)
+		public RecordViewModel(FileSystemInfo info, string customName = null, bool isPinnedToRoot = false)
 		{
 			_customName = customName;
+			IsPinnedToRoot = isPinnedToRoot;
 			_info = info;
 			_infoDir = info as DirectoryInfo;
 			_infoFile = info as FileInfo;
 			_isFolder = _infoDir != null;
+		}
+
+		public RecordViewModel(Record record, string customName = null, bool isPinnedToRoot = false)
+		{
+			/*
+			_customName = customName;
+			IsPinnedToRoot = isPinnedToRoot;
+			_info = info;
+			_infoDir = info as DirectoryInfo;
+			_infoFile = info as FileInfo;
+			_isFolder = _infoDir != null;
+			*/
+		}
+
+		public string ToolTip
+		{
+			get
+			{
+				if (IsPinnedToRoot)
+				{
+					return LocalPath;
+				}
+
+				return null;
+			}
 		}
 
 		public string LocalPath
@@ -371,6 +397,8 @@ namespace Consist.ViewModel
 				return false; // file
 			}
 		}
+
+		public bool IsPinnedToRoot { get; }
 
 		// [DebuggerNonUserCode]
 		// [DebuggerStepThrough]
