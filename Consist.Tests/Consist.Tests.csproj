@@ -33,7 +33,8 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>
+    </DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -44,11 +45,14 @@
   <ItemGroup>
     <Compile Include="HashAlgoListTests.cs" />
     <Compile Include="HashPerformanceCalculation.cs" />
+    <Compile Include="KeyPathTests.cs" />
+    <Compile Include="MainThreadTest.cs" />
     <Compile Include="PersistedMetadataProviderTests.cs" />
     <Compile Include="ScannerTests.cs" />
     <Compile Include="SnapshotCalculation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ContainerTests.cs" />
+    <Compile Include="UnitTest1.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MSTest.TestAdapter">

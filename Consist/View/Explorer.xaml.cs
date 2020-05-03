@@ -92,7 +92,9 @@ namespace Consist.View
 		{
 			DataContext.Root.Scan((RecordViewModel) e.Parameter, new Implementation.AnalyzerContext
 			{
-				ScanSubfolders = true,
+				ScanNodeItself = true,
+				ScanChildren = true,
+				ScanRecursively = true,
 				CalculateHashSum = false,
 			});
 		}
@@ -100,7 +102,9 @@ namespace Consist.View
 		{
 			DataContext.Root.Scan((RecordViewModel)e.Parameter, new Implementation.AnalyzerContext
 			{
-				ScanSubfolders = true,
+				ScanNodeItself = true,
+				ScanChildren = true,
+				ScanRecursively = true,
 				CalculateHashSum = true,
 			});
 		}

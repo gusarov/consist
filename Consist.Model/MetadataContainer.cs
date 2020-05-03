@@ -9,27 +9,78 @@ namespace Consist.Model
 	public class MetadataContainer : ISpace
 	{
 		private readonly Dictionary<string, Record> _records = new Dictionary<string, Record>();
-		private readonly Dictionary<string, Record> _recordsVirtual = new Dictionary<string, Record>();
 
 		public string LocalRootPath => Metadata
-			.FirstOrDefault(x => x.MetadataRecordType == MetadataRecordType.OriginalPath)?.Value;
+			.LastOrDefault(x => x.MetadataRecordType == MetadataRecordType.OriginalPath)?.Value;
+		// last is the most recent container value when opened
 
-		public Record Get(string key)
+		public Record TryGet(string key)
 		{
-			if (_recordsVirtual.TryGetValue(key, out var record))
-			{
-				return record;
-			}
-			_records.TryGetValue(key, out record);
+			_records.TryGetValue(key, out var record);
 			return record;
 		}
-		public IEnumerable<Record> GetAll()
+
+		public Record GetOrCreate(string key, Record parent = null)
 		{
-			return _records.Values.Concat(_recordsVirtual.Values);
+			if (!_records.TryGetValue(key, out var record))
+			{
+				if (parent != null && !parent.IsFolder)
+				{
+					throw new Exception("parent must be a folder");
+				}
+
+				if (parent == null)
+				{
+					parent = GetOrCreateParent(key);
+				}
+				else
+				{
+#if DEBUG
+					if (!ReferenceEquals(parent, GetOrCreateParent(key)))
+					{
+						throw new Exception("parent is not corresponding to the key");
+					}
+#endif
+				}
+				if (parent != null && !parent.IsFolder)
+				{
+					throw new Exception("parent must be a folder");
+				}
+				_records[key] = record = new Record(this, parent, key);
+
+				// UpdateParentFolder(record, parent); // Record ctor will add to parent
+			}
+			return record;
 		}
 
-		public void Put(Record rec)
+		public IEnumerable<Record> GetAll()
 		{
+			return _records.Values/*.Concat(_recordsVirtual.Values)*/;
+		}
+
+		public Record Add(Record parent, string keyPath)
+		{
+			var rec = new Record(this, parent, keyPath);
+			Add(rec);
+			return rec;
+		}
+
+		public void Add(Record rec)
+		{
+			if (rec.Container != this)
+			{
+				throw new Exception("Can only add records that are bind to this container");
+			}
+			if (rec.SubRecords != null)
+			{
+				throw new Exception("Injecting a record with subfolders! Don't do this, I'm managing it myself");
+			}
+
+			// _records.TryGetValue(rec.KeyPath, out var old);
+			_records.Add(rec.KeyPath, rec);
+			// if (old != null) { rec.SubRecords = old.SubRecords; }
+
+			/*
 			if (rec.KeyPath.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
 			{
 				_recordsVirtual.Add(rec.KeyPath, rec);
@@ -39,43 +90,123 @@ namespace Consist.Model
 				_records.Add(rec.KeyPath, rec);
 			}
 
-			UpdateParentFolder(rec);
+
+			*/
+
+			if (rec.Parent != null)
+			{
+				UpdateParentFolder(rec, rec.Parent);
+			}
+
+			/*
+			Notifier.Instance.NotifyItemScanned(new ItemScannedEventArgs
+			{
+				Container = this,
+				NewRecord = rec,
+			});
+			*/
 			// Console.WriteLine($"{rec.KeyPath} {rec.Hash}");
 		}
 
-		internal void SetMetadata(IEnumerable<MetadataRecord> records)
+		internal void SetMetadata(MetadataRecordType type, IEnumerable<string> values)
 		{
-			var types = new HashSet<MetadataRecordType>(records.Select(x => x.MetadataRecordType));
+			// var types = new HashSet<MetadataRecordType>(records.Select(x => x.MetadataRecordType));
 
-			foreach (var record in _metadata.Where(x => types.Contains(x.MetadataRecordType)).ToArray())
+			foreach (var record in _metadata.Where(x => type==x.MetadataRecordType).ToArray())
 			{
 				_metadata.Remove(record);
 			}
+
+			foreach (var val in values)
+			{
+				_metadata.Add(new MetadataRecord(type, val));
+			}
 		}
 
-		void UpdateParentFolder(Record rec)
+		Record GetOrCreateParent(string itemKey)
 		{
-			var parent = Path.GetDirectoryName(rec.KeyPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-			if (!parent.EndsWith(Path.DirectorySeparatorChar.ToString()))
+			/*
+			var fileSystemEntryName = itemKey.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+			if (fileSystemEntryName.Length == 0)
 			{
-				parent += Path.DirectorySeparatorChar;
-			}
-			var item = Get(parent);
-			if (item == null)
-			{
-				item = new Record(parent)
-				{
-					SubRecords = new List<Record>(),
-				};
-				_recordsVirtual.Add(parent, item);
-				if (parent != Path.DirectorySeparatorChar.ToString() &&
-				    parent != Path.AltDirectorySeparatorChar.ToString())
-				{
-					UpdateParentFolder(item);
-				}
+				return null;
 			}
 
-			item.SubRecords.Add(rec);
+			var parentKey = Path.GetDirectoryName(fileSystemEntryName);
+			if (!parentKey.EndsWith(Path.DirectorySeparatorChar.ToString()))
+			{
+				parentKey += Path.DirectorySeparatorChar;
+			}
+			*/
+
+			var parentKey = KeyPath.GetParent(itemKey);
+			if (parentKey == null)
+			{
+				return null;
+			}
+			return GetOrCreate(parentKey);
+		}
+
+		void UpdateParentFolder(Record rec, Record parent)
+		{
+			if (parent == null)
+			{
+				throw new Exception("Currently is mandatory in Record constructor");
+				parent = TryGet(KeyPath.GetParent(rec.KeyPath));
+			}
+			if (parent == null)
+			{
+				throw new Exception("Must have parent in container before adding this item!");
+				/*
+				item = new Record(parent)
+				{
+				};
+				// _recordsVirtual.Add(parent, item);
+				// if (parent != Path.DirectorySeparatorChar.ToString() &&  parent != Path.AltDirectorySeparatorChar.ToString())
+				{
+					UpdateParentFolder(item, null);
+				}
+				*/
+			}
+
+			if (parent.SubRecords == null)
+			{
+				parent.SubRecords = new List<Record>();
+			}
+
+			/*
+			if (!item.SubRecords.Remove(old))
+			{
+				old = null;
+			}
+			*/
+
+			lock (parent.SubRecords)
+			{
+#if DEBUG
+				if (parent.SubRecords.Any(x => x.KeyPath == rec.KeyPath))
+				{
+					throw new Exception("Key path already exists in parent folder");
+				}
+#endif
+				parent.SubRecords.Add(rec);
+			}
+
+			/*
+
+			Notifier.Instance.NotifyItemScanned(new ItemScannedEventArgs
+			{
+				Container = this,
+				Parent = item,
+				NewChildren = rec,
+			});
+
+			if (old == null) // notify new elements. Updates does not need to be notified
+			{
+			}
+
+			*/
 		}
 
 		public int GetSize() =>
@@ -85,7 +216,6 @@ namespace Consist.Model
 		private readonly List<MetadataRecord> _metadata = new List<MetadataRecord>();
 
 		public IList<MetadataRecord> Metadata => _metadata;
-
 
 		public void Save()
 		{
@@ -98,7 +228,11 @@ namespace Consist.Model
 
 		public void Save(string metadataFile)
 		{
-			Directory.CreateDirectory(Path.GetDirectoryName(metadataFile));
+			if (Path.IsPathRooted(metadataFile))
+			{
+				Directory.CreateDirectory(Path.GetDirectoryName(metadataFile));
+			}
+
 			using (var file = File.OpenWrite(metadataFile))
 			{
 				_metadataFile = metadataFile;
@@ -112,7 +246,7 @@ namespace Consist.Model
 					bw.Write((byte)1); // ver
 					bw.Write((byte)16); // md5 len
 
-					var ctx = new StorageContext(1, 16);
+					var ctx = new StorageContext(this, 1, 16);
 
 					if (Metadata.Count >= 64) throw new Exception();
 					bw.Write((byte)Metadata.Count); // meta len
@@ -124,18 +258,6 @@ namespace Consist.Model
 					foreach (var rec in _records.OrderBy(x => x.Key))
 					{
 						rec.Value.Save(bw, ctx);
-						/*
-						var folder = System.IO.Path.GetDirectoryName(rec.Key);
-						if (ctx.CurrentFolder == folder)
-						{
-							rec.Value.Save(bw, true);
-						}
-						else
-						{
-							rec.Value.Save(bw, false);
-						}
-						ctx.CurrentFolder = folder;
-						*/
 					}
 
 				}
@@ -187,7 +309,7 @@ namespace Consist.Model
 
 					var hashLen = br.ReadByte();
 
-					var ctx = new StorageContext(ver, hashLen)
+					var ctx = new StorageContext(this, ver, hashLen)
 					{
 					};
 
@@ -200,9 +322,9 @@ namespace Consist.Model
 
 					while (file.Position != file.Length)
 					{
-						var rec = Record.Load(br, ctx);
+						Record.Load(br, ctx);
 						// _records.Add(rec.KeyPath, rec);
-						Put(rec);
+						// Add(rec);
 					}
 				}
 			}

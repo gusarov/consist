@@ -1,5 +1,4 @@
-﻿using Consist.Implementation.Utils;
-using Consist.Model;
+﻿using Consist.Model;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,13 +10,9 @@ using System.Threading.Tasks;
 
 namespace Consist.Implementation
 {
-	public interface IGlobalIndex
-	{
-		Record Get(string path);
-		void Set(string path, Record rec);
-	}
 
-	public class PersistedMetadataProvider : IGlobalIndex
+
+	public class PersistedMetadataProvider
 	{
 		public static PersistedMetadataProvider Instance = new PersistedMetadataProvider();
 
@@ -38,12 +33,16 @@ namespace Consist.Implementation
 			StringBuilder fileSystemNameBuffer,
 			int nFileSystemNameSize);
 
-
 		public uint GetVolumeSerial(DriveInfo drive)
+		{
+			return GetVolumeSerial(drive.RootDirectory.FullName);
+		}
+
+		public uint GetVolumeSerial(string root)
 		{
 			var volumeName = new StringBuilder(256);
 			var fileSystemName = new StringBuilder(256);
-			if (GetVolumeInformation(drive.RootDirectory.FullName
+			if (GetVolumeInformation(root
 				, volumeName
 				, volumeName.Capacity
 				, out var serial
@@ -53,6 +52,7 @@ namespace Consist.Implementation
 				, fileSystemName.Capacity
 			))
 			{
+				/*
 				DateTime FromCtmToDateTime(uint dateTime)
 				{
 					var startTime = new DateTime(1970, 1, 1, 0, 0, 0, 0);
@@ -60,6 +60,7 @@ namespace Consist.Implementation
 				}
 
 				var dd = FromCtmToDateTime(serial);
+				*/
 				return serial;
 			}
 
@@ -180,7 +181,7 @@ namespace Consist.Implementation
 			return Path.Combine(appData, app, "Metadata");
 		}
 
-		private readonly Dictionary<DriveInfo, MetadataContainer> _containers = new Dictionary<DriveInfo, MetadataContainer>();
+		private readonly Dictionary<uint, MetadataContainer> _containers = new Dictionary<uint, MetadataContainer>();
 
 		MetadataContainer _gs;
 		public MetadataContainer GetContainerGlobalSettings()
@@ -208,44 +209,50 @@ namespace Consist.Implementation
 
 				if (path == root || path == rootSlashed || path.StartsWith(rootSlashed))
 				{
-					if (!_containers.TryGetValue(drive, out var container))
+					var serial = GetVolumeSerial(drive);
+					if (serial == default)
 					{
-						_containers[drive] = container = OpenContainer(drive);
+						var fake = new MetadataContainer();
+						fake.Metadata.Add(new MetadataRecord(MetadataRecordType.OriginalPath, path));
+						return fake;
+						// throw new Exception($"Unable to prepare container - no serial on the volume '{drive.RootDirectory.Name}'");
+					}
+
+					if (!_containers.TryGetValue(serial, out var container))
+					{
+						_containers[serial] = container = OpenContainer(serial, drive);
 					}
 
 					return container;
 				}
 			}
 
-			return null;
+			throw new Exception($"Unable to prepare container - no drive for '{path}'");
 		}
 
-		public MetadataContainer OpenContainer(DriveInfo drive)
+		public MetadataContainer OpenContainer(uint serial, DriveInfo drive)
 		{
-			var serial = GetVolumeSerial(drive);
-
-			if (serial == default)
-			{
-				return null;
-			}
-
 			// todo show user warning when there is multiple volumes have same serial
-
 			var container = new MetadataContainer();
 			var path = Path.Combine(GetDefaultMetadataPath(), $"{serial:X4}.consist");
 			container.Load(path); // if file not here - just remember where it should be
 
+			var origPath = drive.RootDirectory.FullName;
+			if (!container.Metadata.Any(x => x.MetadataRecordType == MetadataRecordType.OriginalPath && x.Value == origPath))
+			{
+				container.Metadata.Add(new MetadataRecord(MetadataRecordType.OriginalPath, origPath));
+			}
 			return container;
 		}
 
-		public Record Get(string path)
+		public Record TryGet(string path)
 		{
 			// find container
 			var container = GetContainer(path);
 
 			var root = Path.GetPathRoot(path);
 			var rel = path.Substring(root.Length).EnsureStartsFromDirectorySeparator();
-			return container.Get(rel);
+			return container.TryGet(rel);
 		}
 
 		public void Set(string path, Record rec)
@@ -256,7 +263,7 @@ namespace Consist.Implementation
 			// var root = Path.GetPathRoot(path);
 			// var rel = path.Substring(root.Length).EnsureStartsFromDirectorySeparator();
 
-			container.Put(rec);
+			container.Add(rec);
 		}
 	}
 }

@@ -31,7 +31,8 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>
+    </DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -65,16 +66,19 @@
     <Compile Include="Utils\ListMaintainer.cs" />
     <Compile Include="Utils\MainThread.cs" />
     <Compile Include="Utils\ShellManager_WPF.cs" />
-    <Compile Include="Utils\ShellManager_Drawing.cs" />
+    <Compile Include="Utils\ShellManager.cs" />
     <Compile Include="ViewModel\BooleanToVisibilityConverter.cs" />
     <Compile Include="ViewModel\ConvertDateTimeToLocal.cs" />
     <Compile Include="ViewModel\ConvertSizeToString.cs" />
     <Compile Include="ViewModel\DelegateCommand.cs" />
     <Compile Include="ViewModel\Directory.cs" />
     <Compile Include="ViewModel\RecordViewModel.cs" />
+    <Compile Include="ViewModel\RecordViewModelFactory.cs" />
     <Compile Include="ViewModel\SnapshotViewModel.cs" />
+    <Compile Include="ViewModel\StatsViewModel.cs" />
     <Compile Include="ViewModel\TreeRootViewModel.cs" />
     <Compile Include="ViewModel\ViewModel.cs" />
+    <Compile Include="ViewModel\WeakReference.cs" />
     <Compile Include="View\GlobalSettings.xaml.cs">
       <DependentUpon>GlobalSettings.xaml</DependentUpon>
     </Compile>
@@ -155,6 +159,10 @@
     <None Include="Resources\Icon\Semlabs-Web-Blog-Folder-search.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Consist.CommonUtils\Consist.CommonUtils.csproj">
+      <Project>{549f2f07-a8f7-4e4f-aa61-83904548422b}</Project>
+      <Name>Consist.CommonUtils</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Consist.Implementation\Consist.Implementation.csproj">
       <Project>{74547224-DB5D-4130-896A-4AC7B3C26269}</Project>
       <Name>Consist.Implementation</Name>

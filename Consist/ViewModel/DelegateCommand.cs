@@ -21,7 +21,7 @@ namespace Consist.ViewModel
 		public DelegateCommand(Action act, Func<bool> can = null)
 		{
 			_act = _ => act();
-			_can = _ => can();
+			_can = _ => can == null || can();
 		}
 
 		public event EventHandler CanExecuteChanged {
@@ -31,7 +31,7 @@ namespace Consist.ViewModel
 
 		public bool CanExecute(object parameter)
 		{
-			return _can(parameter);
+			return _can == null || _can(parameter);
 		}
 
 		public void Execute(object parameter)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using Consist.Implementation;
 using Consist.Model;
@@ -13,17 +14,23 @@ namespace Consist.Tests
 		[TestInitialize]
 		public void ContainerTestsInit()
 		{
-			Analyzer = new Analyzer(Directory.GetCurrentDirectory() + "\\data");
 		}
 
 		public Analyzer Analyzer;
 
 		void Scan()
 		{
+			var container = new MetadataContainer();
+			container.Metadata.Add(new MetadataRecord(MetadataRecordType.OriginalPath,
+				Path.Combine(Directory.GetCurrentDirectory(), "data")));
+			Analyzer = new Analyzer(Directory.GetCurrentDirectory() + "\\data", new FakePersistedMetadataProvider(), container);
 			Analyzer.Scan(new AnalyzerContext
 			{
-				ScanSubfolders = true,
+				ScanNodeItself = true,
+				ScanChildren = true,
+				ScanRecursively = true,
 				CalculateHashSum = true,
+				Save = false,
 			});
 		}
 
@@ -42,10 +49,10 @@ namespace Consist.Tests
 			var container = new MetadataContainer();
 			container.Load(".consist.metadata");
 
-			var rec1 = container.Get("\\abc\\test1.txt");
+			var rec1 = container.TryGet("\\abc\\test1.txt");
 			Assert.AreEqual("634C3BFF7870EB5430A3CB355B88EE1A", rec1.Hash.ToString());
 
-			var rec2 = container.Get("\\abc\\test2.txt");
+			var rec2 = container.TryGet("\\abc\\test2.txt");
 			Assert.AreEqual("76E17179BC18263FBFBB16B35C228B88", rec2.Hash.ToString());
 
 		}
@@ -68,14 +75,14 @@ namespace Consist.Tests
 
 			Console.WriteLine(len);
 
-			Assert.IsTrue(len < 40_000, len.ToString());
+			Assert.IsTrue(len < 50_000, len.ToString());
 
 			var container = new MetadataContainer();
 			container.Load(".consist.metadata");
 
 			for (var i = 0; i < 1000; i++)
 			{
-				var rec = container.Get($"\\{folder}\\test{i}.txt");
+				var rec = container.TryGet($"\\{folder}\\test{i}.txt");
 				Assert.AreEqual("EB733A00C0C9D336E65691A37AB54293", rec.Hash.ToString());
 			}
 

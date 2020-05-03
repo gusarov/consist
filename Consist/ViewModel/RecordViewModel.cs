@@ -17,50 +17,53 @@ using Consist.Interop;
 using Consist.View;
 using System.Windows.Input;
 using System.ComponentModel;
+using Consist.Implementation;
 
 namespace Consist.ViewModel
 {
 	class RecordViewModel : ViewModel, ITreeListNode
 	{
+		public override string ToString() => $"[VM: {_record}]";
+
 		private readonly Record _record;
+		// public Record Record => _record;
+
 		private readonly MetadataContainer _container;
-		
 		private readonly string _customName;
-
-		[Obsolete]
-		private readonly FileSystemInfo _info;
-		[Obsolete]
-		private readonly DirectoryInfo _infoDir;
-		[Obsolete]
-		private readonly FileInfo _infoFile;
-
 		private readonly bool _isFolder;
 
-		[Obsolete]
-		public RecordViewModel(FileSystemInfo info, string customName = null, bool isPinnedToRoot = false)
+		/*
+		public RecordViewModel(Record record, string customName = null, bool isPinnedToRoot = false)
+			:this(recordTuple.Container, recordTuple.Record, customName, isPinnedToRoot)
 		{
-			_customName = customName;
-			IsPinnedToRoot = isPinnedToRoot;
-			_info = info;
-			_infoDir = info as DirectoryInfo;
-			_infoFile = info as FileInfo;
-			_isFolder = _infoDir != null;
 		}
+		*/
 
-		public RecordViewModel(MetadataContainer container, Record record, string customName = null, bool isPinnedToRoot = false)
+		public RecordViewModel(Record record, string customName = null, bool isPinnedToRoot = false)
 		{
-			_container = container;
+			_container = record.Container;
 			_record = record;
 			_customName = customName;
 			IsPinnedToRoot = isPinnedToRoot;
-
-			/*
-			_info = info;
-			_infoDir = info as DirectoryInfo;
-			_infoFile = info as FileInfo;
-			*/
-
 			_isFolder = _record.IsFolder;
+
+			// Debug.WriteLine(LocalPath);
+#if DEBUG
+			var stack = new StackTrace();
+			if (Debugger.IsAttached)
+			{
+				Task.Run(async delegate
+				{
+					await Task.Delay(200);
+					// should be cached if not by now then immediately after construction
+					if (RecordViewModelFactory.Instance.Get(record, false) != this)
+					{
+						Debug.WriteLine(stack);
+						Debugger.Break();
+					}
+				});
+			}
+#endif
 		}
 
 		public string ToolTip
@@ -75,6 +78,7 @@ namespace Consist.ViewModel
 				return null;
 			}
 		}
+
 
 		public string LocalPath
 		{
@@ -124,7 +128,7 @@ namespace Consist.ViewModel
 		{
 			if (!_isFolder)
 			{
-				return _iconNeeded.Contains(Path.GetExtension(_infoFile.Name).ToLowerInvariant());
+				return _iconNeeded.Contains(Path.GetExtension(_record.KeyPath).ToLowerInvariant());
 			}
 
 			return true; // folders and drives have decorators
@@ -141,24 +145,24 @@ namespace Consist.ViewModel
 					_iconRequested = true;
 					if (NeedIcon())
 					{
-						MainThread.Invoke("ImageSource Icon Request",
-						// Task.Run(
+						// MainThread.Invoke("ImageSource Icon Request",
+						Task.Run(
 						delegate
 						{
 #if DELAY
 						await Task.Delay(500);
 #endif
-							if (_info is DirectoryInfo di)
+							if (_isFolder)
 							{
-								var icon = ShellManager.GetIcon(_info.FullName, true);
+								var icon = ShellManager.GetIcon(LocalPath, true);
 								if (icon != null)
 								{
 									_icon = icon;
 								}
 							}
-							else if (_info is FileInfo fi)
+							else
 							{
-								var icon = ShellManager.GetIcon(_info.FullName, false);
+								var icon = ShellManager.GetIcon(LocalPath, false);
 								if (icon != null)
 								{
 									_icon = icon;
@@ -168,6 +172,7 @@ namespace Consist.ViewModel
 							MainThread.Invoke("get_ImageSource deferred part",
 								delegate { OnPropertyChanged(nameof(ImageSource)); });
 						});
+						
 					}
 				}
 
@@ -183,7 +188,7 @@ namespace Consist.ViewModel
 					}
 					else
 					{
-						var ext = Path.GetExtension(_info.Name);
+						var ext = Path.GetExtension(_record.KeyPath);
 						if (!_iconByExt.TryGetValue(ext, out var extIcon))
 						{
 							_iconByExt[ext] = extIcon = ShellManager.GetImageSource(ext, false, false);
@@ -200,6 +205,8 @@ namespace Consist.ViewModel
 		{
 			get
 			{
+				return _size ?? (_size = _record.FileSize);
+				/*
 				if (_size is null)
 				{
 					Task.Run(delegate
@@ -219,13 +226,16 @@ namespace Consist.ViewModel
 					});
 				}
 				return _size;
+				*/
 			}
 		}
-		DateTime? _lastChange;
+		// DateTime? _lastChange;
 		public DateTime? LastChange
 		{
 			get
 			{
+				return _record.LastModificationUtc;
+				/*
 				if (_lastChange is null)
 				{
 					Task.Run(delegate
@@ -236,6 +246,7 @@ namespace Consist.ViewModel
 					});
 				}
 				return _lastChange;
+				*/
 			}
 		}
 
@@ -259,12 +270,13 @@ namespace Consist.ViewModel
 		{
 			get
 			{
-				if (_attributes == null)
+				if (_attributes == null && _record.FileAttributes.HasValue)
 				{
-					Task.Run(delegate
+
+					// Task.Run(delegate
 					{
 						var r = "";
-						var a = _info.Attributes;
+						var a = _record.FileAttributes.Value;
 						var orig = a;
 
 						if ((a & FileAttributes.ReadOnly) > 0)
@@ -297,6 +309,16 @@ namespace Consist.ViewModel
 							r += "C";
 							a &= ~FileAttributes.Compressed;
 						}
+						if ((a & FileAttributes.NotContentIndexed) > 0)
+						{
+							r += "N";
+							a &= ~FileAttributes.NotContentIndexed;
+						}
+						if ((a & FileAttributes.ReparsePoint) > 0)
+						{
+							r += "P";
+							a &= ~FileAttributes.ReparsePoint;
+						}
 
 						if (_isFolder)
 						{
@@ -315,12 +337,14 @@ namespace Consist.ViewModel
 						{
 							_attributes = r + " " + a + " (0x" + (((int) orig).ToString("X8")) + ")";
 						}
-
+						/*
 						MainThread.Invoke("get_Attributes deferred part", delegate
 						{
 							OnPropertyChanged(nameof(Attributes));
 						});
-					});
+						*/
+					}
+					// );
 				}
 
 				return _attributes;
@@ -329,6 +353,7 @@ namespace Consist.ViewModel
 		}
 
 		private bool? _isExpanded;
+		private bool _isBeenEverExpanded;
 
 		public bool IsExpanded
 		{
@@ -345,7 +370,37 @@ namespace Consist.ViewModel
 			set
 			{
 				_isExpanded = value;
+				if (!_isBeenEverExpanded)
+				{
+					_isBeenEverExpanded = true;
+					Task.Run(delegate
+					{
+						AnalyzerQueue.Instance.Scan(LocalPath, new AnalyzerContext
+						{
+							ScanChildren = true,
+						});
+					});
+				}
 				OnPropertyChanged();
+			}
+		}
+
+		public string AttributesString
+		{
+			get { return (Record.FileAttributes & ~FileAttributes.Directory).ToString(); }
+		}
+
+		public string DebugString
+		{
+			get
+			{
+				int? cnt = null;
+				if (_children != null)
+				{
+					cnt = _children.Count;
+				}
+
+				return $"{cnt}";
 			}
 		}
 
@@ -354,18 +409,21 @@ namespace Consist.ViewModel
 			get { return default; }
 		}
 
+		public string Error => _record.Error;
 
-		private string _error;
-
-		public string Error
+		public string HashCode
 		{
-			get => _error;
-			set
+			get
 			{
-				_error = value;
-				OnPropertyChanged();
+				if (_record.Hash == null)
+				{
+					return null;
+				}
+				return string.Join("",_record.Hash.Value.Select(x => x.ToString("X2")));
 			}
 		}
+
+		public bool ChildrenPromised => _children != null;
 
 		ObservableCollection<RecordViewModel> _children;
 
@@ -378,20 +436,77 @@ namespace Consist.ViewModel
 					if (_children == null)
 					{
 						_children = new ObservableCollection<RecordViewModel>();
-						Task.Run(() => RescanChildren());
+						UpdateCollection();
+						OnPropertyChanged(nameof(ChildrenIfAny));
+						RootDataContext.Instance.Scan(this, new AnalyzerContext
+						{
+							ScanNodeItself = false,
+							ScanChildren = true,
+							ScanRecursively = false,
+						});
 					}
 				}
 				return _children;
 			}
 		}
 
-		private bool? _hasItems;
+		public ObservableCollection<RecordViewModel> ChildrenIfAny
+		{
+			get
+			{
+				return _children;
+			}
+		}
+
+		void UpdateCollection()
+		{
+			if (_record.SubRecords != null)
+			{
+				Record[] clone;
+				lock (_record.SubRecords)
+				{
+					clone = _record.SubRecords.ToArray();
+				}
+				var subs = clone.Select(x => RecordViewModelFactory.Instance.Get(x))
+#if DEBUG
+					.ToArray()
+#endif
+					;
+
+				/*
+				Debug.WriteLine("Expected List:");
+				foreach (var item in subs)
+				{
+					Debug.WriteLine(item.Record);
+				}
+				Debug.WriteLine("==== end ===");
+				*/
+				_children.ViewMaintenance(subs);
+
+				OnPropertyChanged(nameof(HasItems));
+			}
+		}
+
+		// private bool? _hasItems;
 		public bool HasItems
 		{
 			get
 			{
 				if (_isFolder)
 				{
+					if (_children == null)
+					{
+						return true; // we don't really know, scan might be pending
+					}
+
+					if (_children.Count == 0)
+					{
+						return false; // we know for sure
+					}
+
+					return true;
+
+					/*
 					if (_hasItems == null)
 					{
 						Task.Run(delegate
@@ -411,7 +526,8 @@ namespace Consist.ViewModel
 							}
 						});
 					}
-					return _hasItems ?? true;
+					*/
+					// return _hasItems ?? true;
 				}
 				return false; // file
 			}
@@ -419,16 +535,8 @@ namespace Consist.ViewModel
 
 		public bool IsPinnedToRoot { get; }
 
-		// [DebuggerNonUserCode]
-		// [DebuggerStepThrough]
 		async void RescanChildren()
 		{
-			return;
-			// call to this method is NOT thread safe
-#if DELAY
-			await Task.Delay(1000);
-#endif
-			MainThread.AssertNotUiThread();
 			/*
 			lock (_children)
 			{
@@ -480,6 +588,26 @@ namespace Consist.ViewModel
 				}
 			}
 			*/
+		}
+
+		public Record Record => _record;
+
+		public void NotifyRecord(Record record)
+		{
+			if (_record != record)
+			{
+				throw new Exception();
+			}
+
+			// Debug.WriteLine($"Notify VM: {Record.KeyPath}");
+			// _record = record;
+			OnPropertyChanged(null); // all for WPF
+		}
+		public void NotifyChildren(Record record)
+		{
+			// _record = record;
+			// Debug.WriteLine($"Synchronize VM Children of: {Record.KeyPath}");
+			UpdateCollection();
 		}
 	}
 }

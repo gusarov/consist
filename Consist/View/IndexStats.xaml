@@ -4,10 +4,13 @@
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
 	xmlns:local="clr-namespace:Consist.View"
-	mc:Ignorable="d" 
+	xmlns:viewModel="clr-namespace:Consist.ViewModel"
+	xmlns:model="clr-namespace:Consist.Model;assembly=Consist.Model"
+	mc:Ignorable="d"
+	d:DataContext="{d:DesignInstance Type=viewModel:StatsViewModel}"
 	d:DesignHeight="450"
 	d:DesignWidth="800">
-	<GroupBox Header="Index Statistics">
+	<GroupBox Header="Statistics">
 		<Grid>
 			<Grid.ColumnDefinitions>
 				<ColumnDefinition />
@@ -17,11 +20,24 @@
 				<RowDefinition />
 				<RowDefinition />
 				<RowDefinition />
+				<RowDefinition />
+
+				<RowDefinition />
 			</Grid.RowDefinitions>
-			<TextBlock Grid.Row="0" Grid.Column="0">Items Indexed:</TextBlock>
-			<TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ItemsCount}"/>
-			<TextBlock Grid.Row="1" Grid.Column="0">Index Size:</TextBlock>
-			<TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Size}"/>
+			<TextBlock Grid.Row="0" Grid.Column="0">UI Loop:</TextBlock>
+			<TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Stats.MessageLoop}"/>
+			<TextBlock Grid.Row="1" Grid.Column="0">Analyzer Queue:</TextBlock>
+			<TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Stats.AnalyzeQueue}"/>
+			<TextBlock Grid.Row="2" Grid.Column="0">Items Indexed:</TextBlock>
+			<TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ItemsCount}"/>
+			<TextBlock Grid.Row="3" Grid.Column="0">Index Size:</TextBlock>
+			<TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Size}"/>
+
+			<TextBlock Grid.Row="99" Grid.Column="0">Test</TextBlock>
+			<Button Grid.Row="99" Grid.Column="1" Command="{Binding Test}">
+				Test
+			</Button>
+
 		</Grid>
 	</GroupBox>
 </UserControl>

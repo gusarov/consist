@@ -9,7 +9,9 @@
 		xmlns:gl="clr-namespace:System.Globalization;assembly=mscorlib"
 		xmlns:commands="clr-namespace:Consist.Commands"
 		mc:Ignorable="d"
-		d:DesignHeight="850" d:DesignWidth="800">
+		d:DataContext="{d:DesignInstance Type=viewModel:TreeRootViewModel, IsDesignTimeCreatable=True}"
+		d:DesignHeight="850"
+		d:DesignWidth="800">
 	<UserControl.CommandBindings>
 		<CommandBinding Command="{x:Static commands:CCommands.Scan}" Executed="Scan" CanExecute="Can_Scan" />
 		<CommandBinding Command="{x:Static commands:CCommands.ScanHash}" Executed="ScanHash" CanExecute="Can_Scan" />
@@ -19,11 +21,11 @@
 	<Grid HorizontalAlignment="Stretch">
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="0"/>
-			<ColumnDefinition Width="2" />
-			<ColumnDefinition Width="5*" />
+			<ColumnDefinition Width="*"/>
+			<ColumnDefinition Width="*" />
 		</Grid.ColumnDefinitions>
 		<Border Grid.Column="0" >
-			<TreeView ItemsSource="{Binding}" >
+			<TreeView ItemsSource="{Binding}">
 				<TreeView.ItemContainerStyle>
 					<Style TargetType="TreeViewItem">
 						<Setter Property="IsExpanded" Value="{Binding IsExpanded}" />
@@ -53,7 +55,36 @@
 				</TreeView.Resources>
 			</TreeView>
 		</Border>
-		<GridSplitter Grid.Column="1"/>
+		<Border Grid.Column="1">
+			<DataGrid AutoGenerateColumns="False" CanUserAddRows="False">
+				<DataGridTemplateColumn
+					Header="Name">
+					<DataGridTemplateColumn.CellTemplate>
+						<DataTemplate>
+							<Grid>
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="{Binding Level, Converter={StaticResource LevelSpaceConverter}}"/>
+									<ColumnDefinition Width="{StaticResource TreeToggleWidth}"/>
+									<ColumnDefinition Width="Auto"/>
+								</Grid.ColumnDefinitions>
+
+								<CheckBox 
+									Grid.Column="1"
+									IsChecked="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+									Visibility="{Binding HasChildren, Converter={StaticResource TreeToggleConverter}}"/>
+								<TextBlock
+									Grid.Column="2"
+									Text="{Binding Name}"/>
+							</Grid>
+						</DataTemplate>
+					</DataGridTemplateColumn.CellTemplate>
+				</DataGridTemplateColumn>
+
+				<DataGridTextColumn
+					Header="Value"
+					Binding="{Binding Value}"/>
+			</DataGrid>
+		</Border>
 		<Border Grid.Column="2" >
 
 			<local:TreeListView ItemsSource="{Binding}" AllowsColumnReorder="True" SnapsToDevicePixels="True" KeyDown="TreeListView_KeyDown">
@@ -99,6 +130,14 @@
 						</GridViewColumn.CellTemplate>
 					</GridViewColumn>
 
+					<GridViewColumn Header="Debug" Width="80">
+						<GridViewColumn.CellTemplate>
+							<DataTemplate>
+								<TextBlock Text="{Binding ChildrenIfAny.Count}" HorizontalAlignment="Right"/>
+							</DataTemplate>
+						</GridViewColumn.CellTemplate>
+					</GridViewColumn>
+
 					<GridViewColumn Header="Percentage" Width="80">
 						<GridViewColumn.CellTemplate>
 							<DataTemplate>
@@ -123,7 +162,7 @@
 						</GridViewColumn.CellTemplate>
 					</GridViewColumn>
 
-					<GridViewColumn Header="LastChange" Width="150">
+					<GridViewColumn Header="LastChange" Width="110">
 						<GridViewColumn.CellTemplate>
 							<DataTemplate>
 								<TextBlock Text="{Binding LastChange, Converter={StaticResource TimeToLocal}, StringFormat='g', ConverterCulture={x:Static gl:CultureInfo.CurrentUICulture}}"/>
@@ -131,10 +170,26 @@
 						</GridViewColumn.CellTemplate>
 					</GridViewColumn>
 
-					<GridViewColumn Header="Attributes" Width="150">
+					<GridViewColumn Header="Attributes" Width="110">
 						<GridViewColumn.CellTemplate>
 							<DataTemplate>
-								<TextBlock Text="{Binding Attributes}"/>
+								<TextBlock Text="{Binding Attributes}" ToolTip="{Binding AttributesString}"/>
+							</DataTemplate>
+						</GridViewColumn.CellTemplate>
+					</GridViewColumn>
+
+					<GridViewColumn Header="HashCode" Width="230">
+						<GridViewColumn.CellTemplate>
+							<DataTemplate>
+								<TextBlock FontFamily="Consolas" Text="{Binding HashCode}"/>
+							</DataTemplate>
+						</GridViewColumn.CellTemplate>
+					</GridViewColumn>
+
+					<GridViewColumn Header="Error" Width="200">
+						<GridViewColumn.CellTemplate>
+							<DataTemplate>
+								<TextBlock Text="{Binding Error}"/>
 							</DataTemplate>
 						</GridViewColumn.CellTemplate>
 					</GridViewColumn>

@@ -1,7 +1,6 @@
 ﻿using Consist.Implementation;
 using Consist.Model;
 using Consist.Utils;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -12,20 +11,28 @@ using System.Windows.Input;
 
 namespace Consist.ViewModel
 {
+
 	class TreeRootViewModel : ObservableCollection<RecordViewModel>
 	{
-		public TreeRootViewModel(RootDataContext root, PersistedMetadataProvider persistedMetadataProvider = null)
+		public TreeRootViewModel(RootDataContext root, PersistedMetadataProvider persistedMetadataProvider = null, GlobalIndex globalIndex = null, AnalyzerQueue analyzerQueue = null)
 		{
-			RunRefresh();
 			Root = root;
 			_persistedMetadataProvider = persistedMetadataProvider ?? PersistedMetadataProvider.Instance;
+			_globalIndex = globalIndex ?? GlobalIndex.Instance;
+			_analyzerQueue = analyzerQueue ?? AnalyzerQueue.Instance;
+
+			RunRefresh();
 			// RefreshAsync().ConfigureAwait(false);
 		}
 		public RootDataContext Root { get; }
 
-		private Dictionary<uint, RecordViewModel> _viewModelsByDriveSerial = new Dictionary<uint, RecordViewModel>();
-		private Dictionary<string, RecordViewModel> _viewModelsByPinnedLocal = new Dictionary<string, RecordViewModel>();
+		private readonly Dictionary<uint, RecordViewModel> _viewModelsByDriveSerial = new Dictionary<uint, RecordViewModel>();
+
+		// private Dictionary<string, RecordViewModel> _viewModelsByPinnedLocal = new Dictionary<string, RecordViewModel>();
+
 		private readonly PersistedMetadataProvider _persistedMetadataProvider;
+		private readonly GlobalIndex _globalIndex;
+		private readonly AnalyzerQueue _analyzerQueue;
 
 		public void RunRefresh()
 		{
@@ -42,10 +49,33 @@ namespace Consist.ViewModel
 			var viewModels = new List<RecordViewModel>();
 			foreach (var pin in pinned)
 			{
+				var rt = _globalIndex.Request(pin.Value.EnsureEndsByDirectorySeparator());
+				var vm = RecordViewModelFactory.Instance.Get(rt, false);
+				if (vm == null)
+				{
+					vm = new RecordViewModel(rt, isPinnedToRoot: true);
+					RecordViewModelFactory.Instance.Cache(rt, vm);
+#if DEBUG
+					var test = RecordViewModelFactory.Instance.Get(rt, false);
+					if (test != vm)
+					{
+						throw new System.Exception();
+					}
+#endif
+				}
+
+				_analyzerQueue.Scan(vm.LocalPath, new AnalyzerContext
+				{
+					ScanNodeItself = true,
+				});
+
+				/*
 				if (!_viewModelsByPinnedLocal.TryGetValue(pin.Value, out var vm))
 				{
-					_viewModelsByPinnedLocal[pin.Value] = vm = new RecordViewModel(new DirectoryInfo(pin.Value), isPinnedToRoot: true);
+					_viewModelsByPinnedLocal[pin.Value] = 
+					// _viewModelsByPinnedLocal[pin.Value] = vm = new RecordViewModel(new DirectoryInfo(pin.Value), isPinnedToRoot: true);
 				}
+				*/
 				viewModels.Add(vm);
 			}
 
@@ -55,11 +85,28 @@ namespace Consist.ViewModel
 				Serial = _persistedMetadataProvider.GetVolumeSerial(x),
 			}))
 			{
-				if (!_viewModelsByDriveSerial.TryGetValue(drive.Serial, out var vm))
+				if (drive.Drive.IsReady)
 				{
-					_viewModelsByDriveSerial[drive.Serial] = vm = new RecordViewModel(drive.Drive.RootDirectory, drive.Drive.Name);
+					if (!_viewModelsByDriveSerial.TryGetValue(drive.Serial, out var vm))
+					{
+						var rec = _globalIndex.Request(drive.Drive.RootDirectory.FullName);
+						_viewModelsByDriveSerial[drive.Serial] = vm = new RecordViewModel(rec, drive.Drive.Name);
+						RecordViewModelFactory.Instance.Cache(rec, vm);
+#if DEBUG
+						var test = RecordViewModelFactory.Instance.Get(rec, false);
+						if (test != vm)
+						{
+							throw new System.Exception();
+						}
+#endif
+					}
+
+					_analyzerQueue.Scan(vm.LocalPath, new AnalyzerContext
+					{
+						ScanNodeItself = true,
+					});
+					viewModels.Add(vm);
 				}
-				viewModels.Add(vm);
 			}
 
 			MainThread.Invoke("TreeRoot RefreshAsync", delegate
@@ -74,34 +121,28 @@ namespace Consist.ViewModel
 	{
 		public static RootDataContext Instance = new RootDataContext();
 
-		RootDataContext(PersistedMetadataProvider persistedMetadataProvider = null)
+		RootDataContext(PersistedMetadataProvider persistedMetadataProvider = null, AnalyzerQueue analyzerQueue = null)
 		{
 			// ScanCommand = new DelegateCommand(x => Scan((RecordViewModel)x));
 			TreeRoot = new TreeRootViewModel(this);
 			_persistedMetadataProvider = persistedMetadataProvider ?? PersistedMetadataProvider.Instance;
+			_analyzerQueue = analyzerQueue ?? AnalyzerQueue.Instance;
 		}
+
+		public Stats Stats { get; } = Stats.Instance;
 
 		public TreeRootViewModel TreeRoot { get; }
 
 		public WorldMetadata World { get; } = new WorldMetadata();
 
-		private readonly Queue<Analyzer> _analyzers = new Queue<Analyzer>();
 		private readonly PersistedMetadataProvider _persistedMetadataProvider;
+		private readonly AnalyzerQueue _analyzerQueue;
 
 		// public ICommand ScanCommand { get; }
 
 		public void Scan(RecordViewModel record, AnalyzerContext ctx)
 		{
-			Analyzer analyzer;
-			lock (_analyzers)
-			{
-				_analyzers.Enqueue(analyzer = new Analyzer(record.LocalPath));
-			}
-
-			Task.Run(() =>
-			{
-				analyzer.Scan(ctx);
-			});
+			_analyzerQueue.Scan(record.LocalPath, ctx);
 		}
 
 		private MetadataContainer RemovePin(RecordViewModel parameter)

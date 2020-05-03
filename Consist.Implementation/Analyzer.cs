@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -8,7 +9,8 @@ namespace Consist.Implementation
 {
 	public class Analyzer
 	{
-		private readonly string _path;
+		private readonly string _pathToScan;
+		private readonly string _pathContainerRoot;
 		private readonly PersistedMetadataProvider _persistedMetadataProvider;
 
 		public Analyzer(string path, PersistedMetadataProvider persistedMetadataProvider = null, MetadataContainer container = null)
@@ -18,42 +20,158 @@ namespace Consist.Implementation
 				throw new Exception("Must have rooted path");
 			}
 
-			_path = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+			var isFolder = (new FileInfo(path).Attributes & FileAttributes.Directory) > 0;
+
+			if (isFolder)
+			{
+				_pathToScan = path.EnsureEndsByDirectorySeparator();
+			}
+			else
+			{
+				throw new NotImplementedException("Scan file self not completely supported");
+				_pathToScan = path;
+			}
+
 			_persistedMetadataProvider = persistedMetadataProvider ?? PersistedMetadataProvider.Instance;
 			Container = container ?? _persistedMetadataProvider.GetContainer(path);
+
+			var cr = Container.LocalRootPath;
+			if (cr == null)
+			{
+				throw new Exception("Container root is invalid");
+			}
+
+			_pathContainerRoot = cr.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+			// _path = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
 		}
 
 		public MetadataContainer Container { get; }
 
 		public void Scan(AnalyzerContext ctx)
 		{
+			Debug.WriteLine($"Scan: {_pathToScan} Self:{ctx.ScanNodeItself} Kids:{ctx.ScanChildren}");
+
+			/*
 			foreach (var meta in Container.Metadata
-				.Where(x => x.MetadataRecordType == MetadataRecordType.OriginalPath))
+				.Where(x => x.MetadataRecordType == MetadataRecordType.OriginalPath).ToArray())
 			{
 				Container.Metadata.Remove(meta);
 			}
-			ScanDir(ctx, new DirectoryInfo(_path));
+			*/
+
+			if (!ctx.IsValid())
+			{
+				throw new Exception("Context is not valid - nothing to scan");
+			}
+
+			var lrp = Container.LocalRootPath.TrimEnd(Path.AltDirectorySeparatorChar);
+			// _pathToScan.EnsureStartsFromDirectorySeparator();
+			// EnsureIsLocalFolder // if starts / ends on \
+
+			var rel = _pathToScan.Substring(lrp.Length).EnsureStartsFromDirectorySeparator();
+			var record = Container.GetOrCreate(rel);
+
+			ScanDir(record.Parent, ctx, new DirectoryInfo(_pathToScan), new StructContext(ctx.ScanNodeItself, ctx.ScanChildren));
+
+			if (ctx.Save != false)
+			{
+				// Container.Save();
+			}
+
+			Debug.WriteLine($"Scan Done");
 		}
 
-		void ScanDir(AnalyzerContext ctx, DirectoryInfo dir)
+		struct StructContext
 		{
-			Console.WriteLine("Scan " + dir);
-			foreach (var file in dir.EnumerateFiles())
+			
+			public bool ScanNode;
+			public bool ScanChildren;
+
+			public StructContext(bool scanNode, bool scanChildren)
 			{
-				ScanFile(ctx, file);
+				ScanNode = scanNode;
+				ScanChildren = scanChildren;
 			}
-			foreach (var subdir in dir.EnumerateDirectories())
+		}
+
+		void ScanDir(Record parent, AnalyzerContext ctx, DirectoryInfo dir, StructContext sCtx)
+		{
+			// CURRENT NODE
+			var relPath = dir.FullName.Substring(_pathContainerRoot.Length - 1).EnsureEndsByDirectorySeparator();
+			var record = Container.GetOrCreate(relPath, parent);
+
+			if (sCtx.ScanNode)
 			{
-				ScanDir(ctx, subdir);
+				Debug.WriteLine("Scan Dir Self" + dir);
+				try
+				{
+					Fill(ctx, dir, record);
+				}
+				catch (Exception ex)
+				{
+					record.Error = ex.GetType().Name + ": " + ex.Message;
+				}
+
+#if DEBUG
+				if (parent == record)
+				{
+					throw new Exception();
+				}
+#endif
+				Notifier.Instance.NotifyItemScanned(new ItemScannedEventArgs
+				{
+					Container = Container,
+					Parent = parent,
+					Item = record,
+				});
+			}
+
+			// CHILDREN
+			if (sCtx.ScanChildren)
+			{
+				Debug.WriteLine($"!!Scan Children Of {dir}");
+				try
+				{
+					foreach (var file in dir.EnumerateFiles())
+					{
+						ScanFile(record, ctx, file);
+					}
+
+					foreach (var subdir in dir.EnumerateDirectories())
+					{
+						ScanDir(record, ctx, subdir, new StructContext(true, ctx.ScanRecursively));
+					}
+				}
+				catch (Exception ex)
+				{
+					record.Error = ex.GetType().Name + ": " + ex.Message;
+				}
+			}
+		}
+
+		void Fill(AnalyzerContext ctx, FileSystemInfo info, Record rec)
+		{
+			if (ctx.ReadAttributes)
+			{
+				rec.FileAttributes = info.Attributes;
+			}
+
+			if (ctx.ReadModificationDate)
+			{
+				rec.LastModificationUtc = info.LastWriteTimeUtc;
 			}
 		}
 
 		private readonly HashAlgorithm _hashAlgorithm = HashAlgorithm.Create("MD5");
 
-		void ScanFile(AnalyzerContext ctx, FileInfo file)
+		void ScanFile(Record parent, AnalyzerContext ctx, FileInfo file)
 		{
-			var relPath = file.FullName.Substring(_path.Length - 1);
-			var record = new Record(relPath);
+			var relPath = file.FullName.Substring(_pathContainerRoot.Length - 1);
+			var record = Container.GetOrCreate(relPath, parent);
+			// var record = new Record(Container, parent, relPath);
+
+			Fill(ctx, file, record);
+			record.FileSize = file.Length;
 
 			if (ctx.CalculateHashSum)
 			{
@@ -65,21 +183,13 @@ namespace Consist.Implementation
 				record.Hash = new Hash(hash);
 			}
 
-			if (ctx.ReadModificationDate)
+			Notifier.Instance.NotifyItemScanned(new ItemScannedEventArgs
 			{
-				record.LastModificationUtc = file.LastWriteTimeUtc;
-			}
-
-			if (ctx.ReadAttributes)
-			{
-				record.FileAttributes = file.Attributes;
-			}
-
-			record.FileSize = file.Length;
-
-			Container.Put(record);
+				Container = Container,
+				Parent = parent,
+				Item = record,
+			});
 		}
-
 
 	}
 }

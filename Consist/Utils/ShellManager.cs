@@ -9,7 +9,8 @@ namespace Consist.Utils
 {
 	public partial class ShellManager
 	{
-		private static object _lock = new object();
+		private static readonly object _lock = new object();
+
 		public static Icon GetIcon(string path, bool isFolder, FileInfoFlags extra = FileInfoFlags.SmallIcon)
 		{
 			/*
@@ -31,7 +32,7 @@ namespace Consist.Utils
 
 			IntPtr result;
 			ShellFileInfo fileInfo;
-			lock (_lock)
+			lock (_lock) // SHGetFileInfo can be invoked from any thread but must be thread safe
 			{
 				result = Shell32.SHGetFileInfo(path, attributes, out fileInfo, ShellFileInfo.Size, flags);
 			}

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,6 +11,18 @@ namespace Consist.Utils
 	{
 		public static void ViewMaintenance<T>(this IList<T> view, IEnumerable<T> data)
 		{
+#if DEBUG
+			if (view == null)
+			{
+				throw new ArgumentNullException(nameof(view));
+			}
+
+			if (data == null)
+			{
+				throw new ArgumentNullException(nameof(data));
+			}
+#endif
+
 			// var toAdd = new List<T>();
 			var newState = new HashSet<T>();
 			foreach (var item in data)
