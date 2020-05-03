@@ -21,7 +21,7 @@
 	<Grid HorizontalAlignment="Stretch">
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="0"/>
-			<ColumnDefinition Width="*"/>
+			<ColumnDefinition Width="0"/>
 			<ColumnDefinition Width="*" />
 		</Grid.ColumnDefinitions>
 		<Border Grid.Column="0" >
